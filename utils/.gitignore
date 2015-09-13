@@ -1,0 +1,3 @@
+# Cython generated files
+*.c
+*.so

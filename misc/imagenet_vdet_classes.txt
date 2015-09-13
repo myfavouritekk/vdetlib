@@ -1,0 +1,33 @@
+__background__
+airplane
+bear
+bicycle
+bird
+bus
+camel
+car
+cattle
+dog
+domestic cat
+elephant
+fox
+giant panda
+hamster
+hippopotamus
+horse
+lizard
+monkey
+motorcycle
+porcupine
+rabbit
+red panda
+sheep
+skunk
+snake
+squirrel
+tiger
+train
+turtle
+watercraft
+whale
+zebra
