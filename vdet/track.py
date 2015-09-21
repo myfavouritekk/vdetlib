@@ -2,9 +2,10 @@
 import os
 from scipy.io import loadmat
 import numpy as np
+import copy
 from ..utils.protocol import frame_path_after, frame_path_before, tracks_proto_from_boxes
 from ..utils.common import matlab_command, temp_file
-
+from ..utils.cython_nms import track_det_nms
 
 def tld_tracker(vid_proto, det):
     script = os.path.join(os.path.dirname(__file__),
@@ -49,3 +50,43 @@ def track_from_det(vid_proto, det_proto, track_method):
     track_proto['tracks'] = tracks
     return track_proto
 
+
+def greedily_track_from_det(vid_proto, det_proto, track_method,
+                            score_fun, max_tracks):
+    '''greedily track top detections and supress detections
+       that have large overlaps with tracked boxes'''
+    assert vid_proto['video'] == det_proto['video']
+    track_proto = {}
+    track_proto['video'] = vid_proto['video']
+    track_proto['method'] = track_method.__name__
+    tracks = []
+    dets = copy.copy(det_proto['detections'])
+    keep = range(len(dets))
+    num_tracks = 0
+    while len(dets) > 0 and num_tracks < max_tracks:
+        boxes = [[x['frame'],]+x['bbox']+[score_fun(x),] \
+                 for x in dets]
+        keep = apply_track_det_nms(tracks, boxes, thres=0.3)
+        dets = copy.copy([dets[i] for i in keep])
+        if len(dets) > 0:
+            num_tracks += 1
+            dets = sorted(dets, key=lambda x:score_fun(x), reverse=True)
+            print "tracking top No.{} in {}".format(num_tracks, vid_proto['video'])
+            tracks.extend(track_method(vid_proto, dets[0]))
+    track_proto['tracks'] = tracks
+    return track_proto
+
+
+def apply_track_det_nms(tracks, boxes, thres=0.3):
+    if len(tracks) == 0:
+        return range(len(boxes))
+    box_score = np.asarray(boxes, dtype='float32')
+    print "Applying nms between tracks ({}) and detections.".format(len(tracks))
+    track_boxes = []
+    for track in tracks:
+        cur_boxes = [[box['frame'],]+box['bbox'] for box in track]
+        track_boxes.extend(cur_boxes)
+    track_boxes = np.asarray(track_boxes, dtype='float32')
+    keep = track_det_nms(track_boxes, box_score, thres)
+    print "{} / {} boxes kept.".format(len(keep), len(boxes))
+    return keep
