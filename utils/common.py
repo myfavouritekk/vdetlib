@@ -1,4 +1,5 @@
 import os
+import argparse
 import codecs
 import cPickle
 import numpy as np
@@ -268,3 +269,9 @@ def temp_file(suffix=''):
     os.close(f)
     return output_filename
 
+
+def quick_args(arglist):
+    parser = argparse.ArgumentParser()
+    for arg in arglist:
+        parser.add_argument(arg)
+    return parser.parse_args()
