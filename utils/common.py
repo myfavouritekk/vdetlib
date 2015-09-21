@@ -226,14 +226,15 @@ def matlab_command(fun_file, input_list, outfile):
     # print(command)
 
     # Execute command in MATLAB.
-    # for debugging
-    # mc = "matlab -nojvm -r \"{}; exit\"".format(command)
-    mc = "matlab -nodisplay -nojvm -nosplash -nodesktop \
-          -r \"try; {}; catch; exit; end; exit\"".format(command)
-    pid = subprocess.Popen(
-        shlex.split(mc), stdout=open('/dev/null', 'w'), cwd=script_dirname)
-        # for debugging
-        # shlex.split(mc), cwd=script_dirname)
+    debug = False
+    if debug:
+        mc = "matlab -nojvm -r \"{}; exit\"".format(command)
+        pid = subprocess.Popen(shlex.split(mc), cwd=script_dirname)
+    else:
+        mc = "matlab -nodisplay -nojvm -nosplash -nodesktop \
+              -r \"try; {}; catch; exit; end; exit\"".format(command)
+        pid = subprocess.Popen(
+            shlex.split(mc), stdout=open('/dev/null', 'w'), cwd=script_dirname)
     retcode = pid.wait()
     if retcode != 0:
         raise Exception("Matlab script did not exit successfully!")
