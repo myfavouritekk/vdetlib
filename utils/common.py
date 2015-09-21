@@ -274,5 +274,8 @@ def temp_file(suffix=''):
 def quick_args(arglist):
     parser = argparse.ArgumentParser()
     for arg in arglist:
-        parser.add_argument(arg)
+        if type(arg) == tuple:
+            parser.add_argument(arg[0], type=arg[1])
+        else:
+            parser.add_argument(arg)
     return parser.parse_args()
