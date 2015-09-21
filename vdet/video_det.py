@@ -18,6 +18,8 @@ def det_vid_with_box(vid_proto, box_proto, det_fun, net,
         img = imread(os.path.join(root, path))
         det_cur_frame = \
             [i for i in det_proto['detections'] if i['frame'] == frame_id]
+        print "Detecting in frame {}, {} boxes...".format(
+            frame_id, len(det_cur_frame))
         for det in det_cur_frame:
             scores = det_fun(img, det['bbox'], net)
             det['scores'] = score_proto(class_names, scores)
@@ -58,7 +60,7 @@ def det_vid_score(vid_proto, det_fun, net, box_proto=None,
         return det_vid_without_box(vid_proto, det_fun, net, class_names)
 
 
-def apply_nms(det_proto, class_index, thres):
+def apply_vid_nms(det_proto, class_index, thres=0.3):
     print 'Apply NMS on video: {}'.format(det_proto['video'])
     new_det = {}
     new_det['video'] = det_proto['video']
