@@ -26,7 +26,7 @@ def get_windows(image_fnames, cmd='selective_search'):
 
     output_filename = temp_file(suffix='.mat')
 
-    image_fnames = [str(name) for name in image_fnames]
+    image_fnames = [os.path.abspath(str(name)) for name in image_fnames]
     matlab_command(script, image_fnames, output_filename)
 
     # swap x-axis and y-axis
