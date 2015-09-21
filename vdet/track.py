@@ -38,6 +38,47 @@ def tld_tracker(vid_proto, det):
     return tracks_proto
 
 
+def fcn_tracker(vid_proto, det):
+    # suppress caffe logs
+    try:
+        orig_loglevel = os.environ['GLOG_minloglevel']
+    except KeyError:
+        orig_loglevel = '0'
+    os.environ['GLOG_minloglevel'] = '2'
+
+    script = os.path.join(os.path.dirname(__file__),
+        '../../External/fcn_tracker_matlab/fcn_tracker.m')
+    bbox = det['bbox']
+    frame_id = det['frame']
+    fw_frames = frame_path_after(vid_proto, frame_id)
+    bw_frames = frame_path_before(vid_proto, frame_id)[::-1]
+    fw_out = temp_file(suffix='.mat')
+    bw_out = temp_file(suffix='.mat')
+    matlab_command(script, [bbox,] + fw_frames, fw_out)
+    matlab_command(script, [bbox,] + bw_frames, bw_out)
+    try:
+        fw_trk = loadmat(fw_out)['bbox']
+    except:
+        print "Forward tracking failed."
+        fw_trk = [bbox+[1.]]+[[float('nan')]*5]*(len(fw_frames)-1)
+
+    try:
+        bw_trk = loadmat(bw_out)['bbox']
+    except:
+        print "Backward tracking failed."
+        bw_trk = [[float('nan')]*5]*(len(bw_frames)-1) + [bbox+[1.]]
+
+    os.remove(fw_out)
+    os.remove(bw_out)
+    bw_trk = bw_trk[::-1]
+    trk = np.concatenate((bw_trk, fw_trk[1:]))
+    tracks_proto = tracks_proto_from_boxes(trk, vid_proto['video'])
+
+    # reset log level
+    os.environ['GLOG_minloglevel'] = orig_loglevel
+    return tracks_proto
+
+
 def track_from_det(vid_proto, det_proto, track_method):
     assert vid_proto['video'] == det_proto['video']
     track_proto = {}
@@ -90,3 +131,4 @@ def apply_track_det_nms(tracks, boxes, thres=0.3):
     keep = track_det_nms(track_boxes, box_score, thres)
     print "{} / {} boxes kept.".format(len(keep), len(boxes))
     return keep
+
