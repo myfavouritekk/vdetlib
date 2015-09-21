@@ -57,6 +57,6 @@ def classify_tracks(video_proto, track_proto, cls_method, net, class_idx):
     cls_track = {}
     cls_track['video'] = video_proto['video']
     cls_track['method'] = cls_method.__name__
-    cls_track['tracks'] = cls_method(video_proto, track_proto, net)
+    cls_track['tracks'] = cls_method(video_proto, track_proto, net, class_idx)
     return cls_track
 
