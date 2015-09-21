@@ -105,15 +105,18 @@ def greedily_track_from_det(vid_proto, det_proto, track_method,
     keep = range(len(dets))
     num_tracks = 0
     while len(dets) > 0 and num_tracks < max_tracks:
+        # Tracking top detection
+        num_tracks += 1
+        print "tracking top No.{} in {}".format(num_tracks, vid_proto['video'])
+        dets = sorted(dets, key=lambda x:score_fun(x), reverse=True)
+        tracks.extend(track_method(vid_proto, dets[0]))
+
+        # NMS
         boxes = [[x['frame'],]+x['bbox']+[score_fun(x),] \
                  for x in dets]
         keep = apply_track_det_nms(tracks, boxes, thres=0.3)
         dets = copy.copy([dets[i] for i in keep])
-        if len(dets) > 0:
-            num_tracks += 1
-            dets = sorted(dets, key=lambda x:score_fun(x), reverse=True)
-            print "tracking top No.{} in {}".format(num_tracks, vid_proto['video'])
-            tracks.extend(track_method(vid_proto, dets[0]))
+
     track_proto['tracks'] = tracks
     return track_proto
 
