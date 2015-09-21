@@ -127,7 +127,7 @@ def proto_dump(obj, file_path):
         json.dump(obj, f, indent=2)
 
 
-def vid_from_dir(root_dir, vid_name=None):
+def vid_proto_from_dir(root_dir, vid_name=None):
     vid = {}
     vid['root_path'] = root_dir
     frames = []
@@ -250,6 +250,17 @@ def top_detections(det_proto, top_num, class_index):
     new_det['detections'] = sorted_det[:top_num]
     return new_det
 
+def frame_top_detections(det_proto, top_num, class_index):
+    new_det = {}
+    new_det['video'] = det_proto['video']
+    new_det['detections'] = []
+    frame_idx = list(set([det['frame'] for det in det_proto['detections']]))
+    for frame_id in frame_idx:
+        cur_dets = copy.copy([det for det in det_proto['detections'] if det['frame'] == frame_id])
+        cur_dets = sorted(cur_dets,
+            key=lambda x: det_score(x, class_index), reverse=True)
+        new_det['detections'].extend(cur_dets[:top_num])
+    return new_det
 
 def track_box_at_frame(tracklet, frame_id):
     for box in tracklet:
