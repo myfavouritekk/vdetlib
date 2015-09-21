@@ -175,8 +175,8 @@ def boxes_proto_from_boxes(frame_idx_list, boxes_list, video_name):
         for bbox in boxes:
             boxes_proto.append(
                     {
-                        'frame': frame_idx,
-                        'bbox': list(bbox),
+                        'frame': int(frame_idx),
+                        'bbox': map(int, bbox),
                         'hash': bbox_hash(video_name, frame_idx, bbox)
                     }
                 )
@@ -201,7 +201,7 @@ def tracks_proto_from_boxes(boxes, video_name):
                     'frame': frame_idx,
                     'bbox': [int(cor) for cor in bbox[0:4]],
                     'hash': bbox_hash(video_name, frame_idx, bbox),
-                    'score': bbox[4]
+                    'score': float(bbox[4])
                 }
             )
     if started:
