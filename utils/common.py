@@ -259,9 +259,15 @@ def imread(image_path):
     return cv2.imread(image_path, cv2.IMREAD_COLOR)
 
 
-def caffe_net(model, param, phase=caffe.TEST):
-    net = caffe.Net(model, param, phase)
+def imwrite(filename, img):
+    cv2.imwrite(filename, img)
+
+
+def caffe_net(model, param, gpu_id=0, phase=caffe.TEST):
+    os.environ['GLOG_minloglevel'] = '2'
     caffe.set_mode_gpu()
+    caffe.set_device(gpu_id)
+    net = caffe.Net(model, param, phase)
     return net
 
 
