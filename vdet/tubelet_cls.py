@@ -33,13 +33,15 @@ def fast_rcnn_cls(video_proto, track_proto, net, class_idx):
 
 def googlenet_cls(video_proto, track_proto, net, class_idx):
     new_tracks = [[] for _ in track_proto['tracks']]
+    print "classifying {}...".format(video_proto['video'])
     for frame in video_proto['frames']:
         frame_id = frame['frame']
         img = imread(frame_path_at(video_proto, frame_id))
         boxes = [track_box_at_frame(tracklet, frame_id) \
                  for tracklet in track_proto['tracks']]
         valid_boxes = np.asarray([box for box in boxes if box is not None])
-        valid_index = [i for i in len(boxes) if boxes[i] is not None]
+        valid_index = [i for i, box in enumerate(boxes) if box is not None]
+        print "frame {}: {} boxes".format(frame_id, len(valid_index))
         for box, track_id in zip(valid_boxes, valid_index):
             scores = googlenet_det(img, box, net)
             new_tracks[track_id].append(

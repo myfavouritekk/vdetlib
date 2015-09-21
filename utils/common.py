@@ -189,7 +189,6 @@ def im_transform(image, size, scale=1., mean_values=[0.,0.,0.]):
       patch = cv2.resize(image, (size, size))
     except:
       print image.shape
-      print bbox
       raise
     trans_img = (np.asarray(patch) - np.asarray(mean_values)) * scale
     return trans_img.swapaxes(1,2).swapaxes(0,1)
@@ -223,11 +222,11 @@ def matlab_command(fun_file, input_list, outfile):
     fnames_cell = '{' + ','.join(["{}".format(x) if type(x) is not str \
         else "'{}'".format(x) for x in input_list]) + '}'
     command = "{}({}, '{}')".format(cmd, fnames_cell, outfile)
-    # print(command)
 
     # Execute command in MATLAB.
     debug = False
     if debug:
+        print(command)
         mc = "matlab -nojvm -r \"{}; exit\"".format(command)
         pid = subprocess.Popen(shlex.split(mc), cwd=script_dirname)
     else:
