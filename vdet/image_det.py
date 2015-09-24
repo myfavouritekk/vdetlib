@@ -3,7 +3,7 @@ import json
 import numpy as np
 import cv2
 import os
-from ..utils.common import im_transform
+from ..utils.common import im_transform, img_crop, rcnn_img_crop
 from ..utils.protocol import proto_load, proto_dump
 from ..utils.cython_nms import nms
 import sys
@@ -12,11 +12,15 @@ sys.path.insert(1, os.path.join(os.path.dirname(__file__),
 from fast_rcnn.test import im_detect
 
 
-def crop(image, bbox):
+def simple_crop(image, bbox):
     bbox = np.asarray(bbox)
     bbox -= 1
-    bbox = map(lambda x:max(0,x), bbox)
-    return image[bbox[1]:bbox[3]+1, bbox[0]:bbox[2]+1]
+    bbox[0] = max(0, bbox[0])
+    bbox[1] = max(0, bbox[1])
+    bbox[2] = min(image.shape[1] - 1, bbox[2])
+    bbox[3] = min(image.shape[0] - 1, bbox[3])
+    return image[bbox[1]:bbox[3]+1, bbox[0]:bbox[2]+1, :]
+
 
 def fast_rcnn_det(img, boxes, net):
     # suppress caffe logs
@@ -56,13 +60,48 @@ def googlenet_det(img, bbox, net):
 
     size = 224
     mean_values = [103.939, 116.779, 123.68]
-    patch = im_transform(crop(img, bbox), size, 1., mean_values)
+    patch = im_transform(simple_crop(img, bbox), size, 1., mean_values)
     net.blobs['data'].data[...] = patch
     net.forward()
     det_scores = np.copy(net.blobs['cls_score'].data[0])
 
     os.environ['GLOG_minloglevel'] = orig_loglevel
     return det_scores.tolist()
+
+
+def googlenet_features(img, boxes, net, blob_name):
+    # suppress caffe logs
+    try:
+        orig_loglevel = os.environ['GLOG_minloglevel']
+    except KeyError:
+        orig_loglevel = '0'
+    os.environ['GLOG_minloglevel'] = '2'
+
+    size = 224
+    mean_values = np.asarray([103.939, 116.779, 123.68])
+    batch_size = 128
+    slice_points = np.arange(0, len(boxes), batch_size)[1:]
+    features = None
+
+    for batch_boxes in np.split(np.asarray(boxes), slice_points):
+        patches = np.asarray(
+            [im_transform(rcnn_img_crop(img, bbox, 'warp', size, 16, mean_values)) for bbox in batch_boxes])
+        net.blobs['data'].reshape(*(patches.shape))
+        net.blobs['data'].data[...] = patches
+        net.forward()
+        cur_feat = np.squeeze(net.blobs[blob_name].data)
+        if features is None:
+            features = np.copy(cur_feat)
+        else:
+            features = np.r_[features, cur_feat]
+    os.environ['GLOG_minloglevel'] = orig_loglevel
+    return np.asarray(features)
+
+
+def svm_scores(features, svm_model):
+    features = np.asarray(features) * (20 / svm_model['feat_norm_mean'])
+    scores = np.dot(features, svm_model['W']) + svm_model['B']
+    return scores
 
 
 def apply_image_nms(boxes, scores, thres=0.3):
