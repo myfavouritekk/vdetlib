@@ -21,8 +21,9 @@ def get_windows(image_fnames, cmd='selective_search'):
     """
     # Form the MATLAB script command that processes images and write to
     # temporary results file.
+    assert cmd in ['selective_search', 'selective_seach_rcnn']
     script = os.path.join(os.path.dirname(__file__),
-        '../../External/selective_search_python/selective_search.m')
+        '../../External/selective_search_python/{}.m'.format(cmd))
 
     output_filename = temp_file(suffix='.mat')
 
