@@ -167,6 +167,16 @@ def frame_path_after(vid_proto, frame_id):
                 for frame in frames]
 
 
+def sample_vid_proto(vid_proto, stride=10):
+    new_vid = {}
+    new_vid['video'] = vid_proto['video']
+    new_vid['root_path'] = vid_proto['root_path']
+    idx = np.arange(0, len(vid_proto['frames']), stride)
+    print "Sampling video by 1 / {}.".format(stride)
+    new_vid['frames'] = [vid_proto['frames'][i] for i in idx]
+    return new_vid
+
+
 ##########################################
 ## Detection Protocol
 ##########################################
