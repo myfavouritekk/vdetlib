@@ -115,6 +115,9 @@ import os
 import copy
 import numpy as np
 
+##########################################
+## General Protocol Manipulation
+##########################################
 
 def proto_load(file_path):
     with open(file_path, 'r') as f:
@@ -126,6 +129,10 @@ def proto_dump(obj, file_path):
     with open(file_path, 'w') as f:
         json.dump(obj, f, indent=2)
 
+
+##########################################
+## Video Protocol
+##########################################
 
 def vid_proto_from_dir(root_dir, vid_name=None):
     vid = {}
@@ -142,6 +149,27 @@ def vid_proto_from_dir(root_dir, vid_name=None):
     vid['video'] = vid_name
     return vid
 
+
+def frame_path_at(vid_proto, frame_id):
+    frame = [frame for frame in vid_proto['frames'] if frame['frame'] == frame_id][0]
+    return str(os.path.join(vid_proto['root_path'], frame['path']))
+
+
+def frame_path_before(vid_proto, frame_id):
+    frames = [frame for frame in vid_proto['frames'] if frame['frame'] <= frame_id]
+    return [str(os.path.join(vid_proto['root_path'], frame['path'])) \
+                for frame in frames]
+
+
+def frame_path_after(vid_proto, frame_id):
+    frames = [frame for frame in vid_proto['frames'] if frame['frame'] >= frame_id]
+    return [str(os.path.join(vid_proto['root_path'], frame['path'])) \
+                for frame in frames]
+
+
+##########################################
+## Detection Protocol
+##########################################
 
 def empty_det_from_box(box_proto):
     det_proto = {}
@@ -167,69 +195,6 @@ def score_proto(class_names, scores):
             }
         )
     return sc_proto
-
-
-def boxes_proto_from_boxes(frame_idx_list, boxes_list, video_name):
-    boxes_proto = []
-    for frame_idx, boxes in zip(frame_idx_list, boxes_list):
-        for bbox in boxes:
-            boxes_proto.append(
-                    {
-                        'frame': int(frame_idx),
-                        'bbox': map(int, bbox),
-                        'hash': bbox_hash(video_name, frame_idx, bbox)
-                    }
-                )
-    return boxes_proto
-
-
-def tracks_proto_from_boxes(boxes, video_name):
-    tracks_proto = []
-    started = False
-    for frame_idx, bbox in enumerate(boxes, start=1):
-        if np.any(np.isnan(bbox)): # invalid boxes
-            if started: # end old track
-                tracks_proto.append(track)
-                started = False
-            continue
-        if not started: # start new track
-            started = True
-            track = []
-
-        track.append(
-                {
-                    'frame': frame_idx,
-                    'bbox': [int(cor) for cor in bbox[0:4]],
-                    'hash': bbox_hash(video_name, frame_idx, bbox),
-                    'score': float(bbox[4])
-                }
-            )
-    if started:
-        tracks_proto.append(track)
-    return tracks_proto
-
-
-def bbox_hash(video_name, frame_id, bbox):
-    return hashlib.md5('{}_{}_{}_{}_{}_{}'.format(
-            video_name, frame_id,
-            bbox[0], bbox[1], bbox[2], bbox[3])).hexdigest()
-
-
-def frame_path_at(vid_proto, frame_id):
-    frame = [frame for frame in vid_proto['frames'] if frame['frame'] == frame_id][0]
-    return str(os.path.join(vid_proto['root_path'], frame['path']))
-
-
-def frame_path_before(vid_proto, frame_id):
-    frames = [frame for frame in vid_proto['frames'] if frame['frame'] <= frame_id]
-    return [str(os.path.join(vid_proto['root_path'], frame['path'])) \
-                for frame in frames]
-
-
-def frame_path_after(vid_proto, frame_id):
-    frames = [frame for frame in vid_proto['frames'] if frame['frame'] >= frame_id]
-    return [str(os.path.join(vid_proto['root_path'], frame['path'])) \
-                for frame in frames]
 
 
 def det_score(detection, class_index):
@@ -261,6 +226,61 @@ def frame_top_detections(det_proto, top_num, class_index):
             key=lambda x: det_score(x, class_index), reverse=True)
         new_det['detections'].extend(cur_dets[:top_num])
     return new_det
+
+
+##########################################
+## Proposal Protocol
+##########################################
+
+def boxes_proto_from_boxes(frame_idx_list, boxes_list, video_name):
+    boxes_proto = []
+    for frame_idx, boxes in zip(frame_idx_list, boxes_list):
+        for bbox in boxes:
+            boxes_proto.append(
+                    {
+                        'frame': int(frame_idx),
+                        'bbox': map(int, bbox),
+                        'hash': bbox_hash(video_name, frame_idx, bbox)
+                    }
+                )
+    return boxes_proto
+
+
+def bbox_hash(video_name, frame_id, bbox):
+    return hashlib.md5('{}_{}_{}_{}_{}_{}'.format(
+            video_name, frame_id,
+            bbox[0], bbox[1], bbox[2], bbox[3])).hexdigest()
+
+
+##########################################
+## Tracking Protocol
+##########################################
+
+def tracks_proto_from_boxes(boxes, video_name):
+    tracks_proto = []
+    started = False
+    for frame_idx, bbox in enumerate(boxes, start=1):
+        if np.any(np.isnan(bbox)): # invalid boxes
+            if started: # end old track
+                tracks_proto.append(track)
+                started = False
+            continue
+        if not started: # start new track
+            started = True
+            track = []
+
+        track.append(
+                {
+                    'frame': frame_idx,
+                    'bbox': [int(cor) for cor in bbox[0:4]],
+                    'hash': bbox_hash(video_name, frame_idx, bbox),
+                    'score': float(bbox[4])
+                }
+            )
+    if started:
+        tracks_proto.append(track)
+    return tracks_proto
+
 
 def track_box_at_frame(tracklet, frame_id):
     for box in tracklet:
