@@ -21,8 +21,9 @@ def det_vid_with_box(vid_proto, box_proto, det_fun, net,
             print "Detecting in frame {}, {} boxes...".format(
                 frame_id, len(det_cur_frame))
             img = imread(os.path.join(root, path))
-            for det in det_cur_frame:
-                scores = det_fun(img, det['bbox'], net)
+            boxes = [det['bbox'] for det in det_cur_frame]
+            det_scores = det_fun(img, boxes, net)
+            for det, scores in zip(det_cur_frame, det_scores):
                 det['scores'] = score_proto(class_names, scores)
     return det_proto
 

@@ -69,6 +69,10 @@ def googlenet_det(img, bbox, net):
     return det_scores.tolist()
 
 
+def googlenet_rcnn(img, boxes, net):
+    return googlenet_features(img, boxes, net, 'cls_score')
+
+
 def googlenet_features(img, boxes, net, blob_name):
     # suppress caffe logs
     try:
@@ -89,11 +93,15 @@ def googlenet_features(img, boxes, net, blob_name):
         net.blobs['data'].reshape(*(patches.shape))
         net.blobs['data'].data[...] = patches
         net.forward()
-        cur_feat = np.squeeze(net.blobs[blob_name].data)
+        cur_feat = net.blobs[blob_name].data
         if features is None:
             features = np.copy(cur_feat)
         else:
-            features = np.r_[features, cur_feat]
+            try:
+                features = np.r_[features, cur_feat]
+            except ValueError, e:
+                print features.shape, cur_feat.shape
+                raise e
     os.environ['GLOG_minloglevel'] = orig_loglevel
     return np.asarray(features)
 
