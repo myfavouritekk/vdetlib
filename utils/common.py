@@ -7,12 +7,14 @@ import matplotlib as mpl
 from scipy.misc import imresize
 import scipy.io as sio
 import subprocess32 as sp
+from multiprocessing import Pool
 import sys
 sys.path.insert(1, os.path.join(os.path.dirname(__file__),
                         '../../External/caffe/python/'))
 import caffe
 import cv2
 import subprocess
+import matlab.engine
 import shlex
 import tempfile
 
@@ -304,6 +306,24 @@ def matlab_command(fun_file, input_list, outfile):
         raise Exception("Matlab script did not exit successfully!")
     else:
         return True
+
+
+def matlab_engine(fun_file, input_list):
+    '''matlab enginer wrapper
+    return_val = fun(input_list)
+    '''
+    script_dirname = os.path.abspath(os.path.dirname(fun_file))
+    fun_name = stem(fun_file)
+    eng = matlab.engine.start_matlab('-nodisplay -nojvm -nosplash -nodesktop -r')
+    eng.cd(script_dirname)
+    func = getattr(eng, fun_name)
+    result = func(input_list)
+    eng.quit()
+    return result
+
+
+def parallel_map(pool, func, input_list):
+    return pool.map(func, input_list)
 
 
 def basename(file_path):
