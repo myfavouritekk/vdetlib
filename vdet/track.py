@@ -2,9 +2,10 @@
 import os
 from scipy.io import loadmat
 import numpy as np
+import matlab
 import copy
 from ..utils.protocol import frame_path_after, frame_path_before, tracks_proto_from_boxes
-from ..utils.common import matlab_command, temp_file
+from ..utils.common import matlab_command, matlab_engine, temp_file
 from ..utils.cython_nms import track_det_nms
 
 def tld_tracker(vid_proto, det):
@@ -52,24 +53,21 @@ def fcn_tracker(vid_proto, det):
     frame_id = det['frame']
     fw_frames = frame_path_after(vid_proto, frame_id)
     bw_frames = frame_path_before(vid_proto, frame_id)[::-1]
-    fw_out = temp_file(suffix='.mat')
-    bw_out = temp_file(suffix='.mat')
-    matlab_command(script, [bbox,] + fw_frames, fw_out)
-    matlab_command(script, [bbox,] + bw_frames, bw_out)
+
     try:
-        fw_trk = loadmat(fw_out)['bbox']
+        fw_trk = matlab_engine(script,
+                    [matlab.double(bbox),] + fw_frames)
     except:
         print "Forward tracking failed."
         fw_trk = [bbox+[1.]]+[[float('nan')]*5]*(len(fw_frames)-1)
 
     try:
-        bw_trk = loadmat(bw_out)['bbox']
+        bw_trk = matlab_engine(script,
+                    [matlab.double(bbox),] + bw_frames)
     except:
         print "Backward tracking failed."
         bw_trk = [[float('nan')]*5]*(len(bw_frames)-1) + [bbox+[1.]]
 
-    os.remove(fw_out)
-    os.remove(bw_out)
     bw_trk = bw_trk[::-1]
     trk = np.concatenate((bw_trk, fw_trk[1:]))
     tracks_proto = tracks_proto_from_boxes(trk, vid_proto['video'])
