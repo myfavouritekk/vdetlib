@@ -3,7 +3,7 @@ import json
 import numpy as np
 import cv2
 import os
-from ..utils.common import im_transform, img_crop, rcnn_img_crop
+from ..utils.common import im_transform, img_crop, rcnn_img_crop, Pool
 from ..utils.protocol import proto_load, proto_dump
 from ..utils.cython_nms import nms
 import sys
@@ -73,6 +73,21 @@ def googlenet_rcnn(img, boxes, net):
     return googlenet_features(img, boxes, net, 'cls_score')
 
 
+class RCNNProcesser(object):
+    """docstring for RCNNProcesser"""
+    def __init__(self, img, crop_mode, crop_size, pad_size, mean_values):
+        self.img = img
+        self.crop_mode = crop_mode
+        self.crop_size = crop_size
+        self.pad_size = pad_size
+        self.mean_values = mean_values
+
+    def __call__(self, input):
+        return im_transform(
+            rcnn_img_crop(self.img, input, self.crop_mode,
+                          self.crop_size, self.pad_size,
+                          self.mean_values))
+
 def googlenet_features(img, boxes, net, blob_name):
     # suppress caffe logs
     try:
@@ -87,9 +102,10 @@ def googlenet_features(img, boxes, net, blob_name):
     slice_points = np.arange(0, len(boxes), batch_size)[1:]
     features = None
 
+    pool = Pool()
     for batch_boxes in np.split(np.asarray(boxes), slice_points):
-        patches = np.asarray(
-            [im_transform(rcnn_img_crop(img, bbox, 'warp', size, 16, mean_values)) for bbox in batch_boxes])
+        processer = RCNNProcesser(img, 'warp', size, 16, mean_values)
+        patches = np.asarray(pool.map(processer, batch_boxes))
         net.blobs['data'].reshape(*(patches.shape))
         net.blobs['data'].data[...] = patches
         net.forward()
@@ -103,6 +119,7 @@ def googlenet_features(img, boxes, net, blob_name):
                 print features.shape, cur_feat.shape
                 raise e
     os.environ['GLOG_minloglevel'] = orig_loglevel
+    pool.terminate()
     return np.asarray(features)
 
 
