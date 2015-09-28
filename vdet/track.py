@@ -35,7 +35,10 @@ def tld_tracker(vid_proto, det):
     os.remove(fw_out)
     os.remove(bw_out)
     bw_trk = bw_trk[::-1]
-    trk = np.concatenate((bw_trk, fw_trk[1:]))
+    if len(fw_trk) > 1:
+        trk = np.concatenate((bw_trk, fw_trk[1:]))
+    else:
+        trk = bw_trk
     tracks_proto = tracks_proto_from_boxes(trk, vid_proto['video'])
     return tracks_proto
 
