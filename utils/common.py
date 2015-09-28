@@ -175,7 +175,12 @@ def img_crop(img, bbox, crop_mode, crop_size, padding, pad_value, gt=None):
     img_window = np.ones((crop_size, crop_size, 3), np.uint8) * \
         pad_value.reshape((1,1,3)).astype(np.uint8)
     img_window[pad_h:pad_h+crop_height, pad_w:pad_w+crop_width] = tmp
-    img_window = (img_window / 255.0).astype(np.float32)
+    # img_window = (img_window / 255.0).astype(np.float32)
+
+    visual_debug = False
+    if visual_debug:
+        cv2.imshow('proposal', img_window)
+        cv2.waitKey(0)
 
     if gt is None:
         return img_window, unclipped_bbox
