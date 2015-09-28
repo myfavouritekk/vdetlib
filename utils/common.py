@@ -385,3 +385,28 @@ def svm_from_rcnn_model(rcnn_model):
     svm['feat_norm_mean'] = rcnn_model['training_opts'][0,0]['feat_norm_mean'][0,0][0,0]
     return svm
 
+from functools import wraps
+import errno
+import signal
+
+class TimeoutError(Exception):
+    pass
+
+def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
+    def decorator(func):
+        def _handle_timeout(signum, frame):
+            raise TimeoutError(error_message)
+
+        def wrapper(*args, **kwargs):
+            signal.signal(signal.SIGALRM, _handle_timeout)
+            signal.alarm(seconds)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                signal.alarm(0)
+            return result
+
+        return wraps(func)(wrapper)
+
+    return decorator
+

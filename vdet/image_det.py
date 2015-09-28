@@ -3,7 +3,7 @@ import json
 import numpy as np
 import cv2
 import os
-from ..utils.common import im_transform, img_crop, rcnn_img_crop, Pool
+from ..utils.common import im_transform, img_crop, rcnn_img_crop, Pool, timeout
 from ..utils.protocol import proto_load, proto_dump
 from ..utils.cython_nms import nms
 import sys
@@ -50,6 +50,8 @@ def fast_rcnn_det(img, boxes, net):
     os.environ['GLOG_minloglevel'] = orig_loglevel
     return new_tracks
 
+
+@timeout(30)
 def googlenet_det(img, bbox, net):
     # suppress caffe logs
     try:
