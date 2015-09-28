@@ -319,7 +319,7 @@ def matlab_engine(fun_file, input_list):
     '''
     script_dirname = os.path.abspath(os.path.dirname(fun_file))
     fun_name = stem(fun_file)
-    eng = matlab.engine.start_matlab('-nodisplay -nojvm -nosplash -nodesktop -r')
+    eng = matlab.engine.start_matlab('-nodisplay -nojvm -nosplash -nodesktop')
     eng.cd(script_dirname)
     func = getattr(eng, fun_name)
     result = func(input_list)
@@ -384,3 +384,4 @@ def svm_from_rcnn_model(rcnn_model):
     svm['B'] = detectors['B'][0,0]
     svm['feat_norm_mean'] = rcnn_model['training_opts'][0,0]['feat_norm_mean'][0,0][0,0]
     return svm
+
