@@ -3,6 +3,7 @@ import os
 from scipy.io import loadmat
 import numpy as np
 import matlab
+import time
 import copy
 from ..utils.protocol import frame_path_after, frame_path_before, tracks_proto_from_boxes
 from ..utils.common import matlab_command, matlab_engine, temp_file
@@ -39,7 +40,7 @@ def tld_tracker(vid_proto, det):
     return tracks_proto
 
 
-def fcn_tracker(vid_proto, det):
+def fcn_tracker(vid_proto, det, gpu=0):
     # suppress caffe logs
     try:
         orig_loglevel = os.environ['GLOG_minloglevel']
@@ -54,22 +55,25 @@ def fcn_tracker(vid_proto, det):
     fw_frames = frame_path_after(vid_proto, frame_id)
     bw_frames = frame_path_before(vid_proto, frame_id)[::-1]
 
+    tic = time.time()
     try:
         fw_trk = matlab_engine(script,
-                    [matlab.double(bbox),] + fw_frames)
+                    [matlab.double(bbox),] + fw_frames + [gpu,])
     except:
         print "Forward tracking failed."
         fw_trk = [bbox+[1.]]+[[float('nan')]*5]*(len(fw_frames)-1)
 
     try:
         bw_trk = matlab_engine(script,
-                    [matlab.double(bbox),] + bw_frames)
+                    [matlab.double(bbox),] + bw_frames + [gpu,])
     except:
         print "Backward tracking failed."
         bw_trk = [[float('nan')]*5]*(len(bw_frames)-1) + [bbox+[1.]]
 
     bw_trk = bw_trk[::-1]
     trk = np.concatenate((bw_trk, fw_trk[1:]))
+    toc = time.time()
+    print "Speed: {:02f} fps".format(len(trk) / (toc-tic))
     tracks_proto = tracks_proto_from_boxes(trk, vid_proto['video'])
 
     # reset log level
@@ -91,7 +95,7 @@ def track_from_det(vid_proto, det_proto, track_method):
 
 
 def greedily_track_from_det(vid_proto, det_proto, track_method,
-                            score_fun, max_tracks):
+                            score_fun, max_tracks, gpu=0):
     '''greedily track top detections and supress detections
        that have large overlaps with tracked boxes'''
     assert vid_proto['video'] == det_proto['video']
@@ -107,7 +111,7 @@ def greedily_track_from_det(vid_proto, det_proto, track_method,
         num_tracks += 1
         print "tracking top No.{} in {}".format(num_tracks, vid_proto['video'])
         dets = sorted(dets, key=lambda x:score_fun(x), reverse=True)
-        tracks.extend(track_method(vid_proto, dets[0]))
+        tracks.extend(track_method(vid_proto, dets[0], gpu=gpu))
 
         # NMS
         boxes = [[x['frame'],]+x['bbox']+[score_fun(x),] \
