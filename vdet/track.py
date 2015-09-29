@@ -74,7 +74,10 @@ def fcn_tracker(vid_proto, det, gpu=0):
         bw_trk = [[float('nan')]*5]*(len(bw_frames)-1) + [bbox+[1.]]
 
     bw_trk = bw_trk[::-1]
-    trk = np.concatenate((bw_trk, fw_trk[1:]))
+    if len(fw_trk) > 1:
+        trk = np.concatenate((bw_trk, fw_trk[1:]))
+    else:
+        trk = bw_trk
     toc = time.time()
     print "Speed: {:02f} fps".format(len(trk) / (toc-tic))
     tracks_proto = tracks_proto_from_boxes(trk, vid_proto['video'])
