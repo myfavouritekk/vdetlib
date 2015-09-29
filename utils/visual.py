@@ -2,6 +2,7 @@
 import cv2
 import copy
 import colorsys
+import matplotlib.pyplot as plt
 
 def unique_colors(N):
     HSV_tuples = [(x*1.0/N, 1, 0.8) for x in range(N)]
