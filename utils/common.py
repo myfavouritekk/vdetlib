@@ -17,6 +17,7 @@ import subprocess
 import matlab.engine
 import shlex
 import tempfile
+from log import logging
 
 def pickle(data, file_path):
     with open(file_path, 'wb') as f:
@@ -257,7 +258,7 @@ def im_transform(image, size=-1, scale=1., mean_values=[0.,0.,0.]):
         try:
             patch = cv2.resize(image, (size, size))
         except:
-            print image
+            logging.error("Unable to resize image.")
             print image.shape
             raise
     else:
@@ -323,7 +324,9 @@ def matlab_engine(fun_file, input_list):
     eng.cd(script_dirname)
     func = getattr(eng, fun_name)
     result = func(input_list)
+    logging.debug("before matlab quiting...")
     eng.quit()
+    logging.debug("after matlab quiting...")
     return result
 
 

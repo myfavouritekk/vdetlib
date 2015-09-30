@@ -8,6 +8,7 @@ import copy
 from ..utils.protocol import frame_path_after, frame_path_before, tracks_proto_from_boxes
 from ..utils.common import matlab_command, matlab_engine, temp_file
 from ..utils.cython_nms import track_det_nms
+from ..utils.log import logging
 
 def tld_tracker(vid_proto, det):
     script = os.path.join(os.path.dirname(__file__),
@@ -23,13 +24,13 @@ def tld_tracker(vid_proto, det):
     try:
         fw_trk = loadmat(fw_out)['bbox']
     except:
-        print "Forward tracking failed."
+        logging.error("Forward tracking failed.")
         fw_trk = [bbox+[1.]]+[[float('nan')]*5]*(len(fw_frames)-1)
 
     try:
         bw_trk = loadmat(bw_out)['bbox']
     except:
-        print "Backward tracking failed."
+        logging.error("Backward tracking failed.")
         bw_trk = [[float('nan')]*5]*(len(bw_frames)-1) + [bbox+[1.]]
 
     os.remove(fw_out)
@@ -63,14 +64,14 @@ def fcn_tracker(vid_proto, det, gpu=0):
         fw_trk = matlab_engine(script,
                     [matlab.double(bbox),] + fw_frames + [gpu,])
     except:
-        print "Forward tracking failed."
+        logging.error("Forward tracking failed.")
         fw_trk = [bbox+[1.]]+[[float('nan')]*5]*(len(fw_frames)-1)
 
     try:
         bw_trk = matlab_engine(script,
                     [matlab.double(bbox),] + bw_frames + [gpu,])
     except:
-        print "Backward tracking failed."
+        logging.error("Backward tracking failed.")
         bw_trk = [[float('nan')]*5]*(len(bw_frames)-1) + [bbox+[1.]]
 
     bw_trk = bw_trk[::-1]
@@ -79,7 +80,7 @@ def fcn_tracker(vid_proto, det, gpu=0):
     else:
         trk = bw_trk
     toc = time.time()
-    print "Speed: {:02f} fps".format(len(trk) / (toc-tic))
+    logging.info("Speed: {:02f} fps".format(len(trk) / (toc-tic)))
     tracks_proto = tracks_proto_from_boxes(trk, vid_proto['video'])
 
     # reset log level
@@ -94,7 +95,7 @@ def track_from_det(vid_proto, det_proto, track_method):
     track_proto['method'] = track_method.__name__
     tracks = []
     for idx, det in enumerate(det_proto['detections'], start=1):
-        print "tracking top No.{} in {}".format(idx, vid_proto['video'])
+        logging.info("tracking top No.{} in {}".format(idx, vid_proto['video']))
         tracks.extend(track_method(vid_proto, det))
     track_proto['tracks'] = tracks
     return track_proto
@@ -115,7 +116,7 @@ def greedily_track_from_det(vid_proto, det_proto, track_method,
     while len(dets) > 0 and num_tracks < max_tracks:
         # Tracking top detection
         num_tracks += 1
-        print "tracking top No.{} in {}".format(num_tracks, vid_proto['video'])
+        logging.info("tracking top No.{} in {}".format(num_tracks, vid_proto['video']))
         dets = sorted(dets, key=lambda x:score_fun(x), reverse=True)
         tracks.extend(track_method(vid_proto, dets[0], gpu=gpu))
 
@@ -133,13 +134,13 @@ def apply_track_det_nms(tracks, boxes, thres=0.3):
     if len(tracks) == 0:
         return range(len(boxes))
     box_score = np.asarray(boxes, dtype='float32')
-    print "Applying nms between tracks ({}) and detections.".format(len(tracks))
+    logging.info("Applying nms between tracks ({}) and detections.".format(len(tracks)))
     track_boxes = []
     for track in tracks:
         cur_boxes = [[box['frame'],]+box['bbox'] for box in track]
         track_boxes.extend(cur_boxes)
     track_boxes = np.asarray(track_boxes, dtype='float32')
     keep = track_det_nms(track_boxes, box_score, thres)
-    print "{} / {} boxes kept.".format(len(keep), len(boxes))
+    logging.info("{} / {} boxes kept.".format(len(keep), len(boxes)))
     return keep
 

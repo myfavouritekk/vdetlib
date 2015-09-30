@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from ..utils.protocol import frame_path_at, track_box_at_frame, bbox_hash
 from ..utils.common import imread
+from ..utils.log import logging
 from ..vdet.image_det import googlenet_det
 import numpy as np
 import sys
@@ -33,7 +34,7 @@ def fast_rcnn_cls(video_proto, track_proto, net, class_idx):
 
 def googlenet_cls(video_proto, track_proto, net, class_idx):
     new_tracks = [[] for _ in track_proto['tracks']]
-    print "classifying {}...".format(video_proto['video'])
+    logging.info("Classifying {}...".format(video_proto['video']))
     for frame in video_proto['frames']:
         frame_id = frame['frame']
         img = imread(frame_path_at(video_proto, frame_id))
@@ -41,7 +42,7 @@ def googlenet_cls(video_proto, track_proto, net, class_idx):
                  for tracklet in track_proto['tracks']]
         valid_boxes = np.asarray([box for box in boxes if box is not None])
         valid_index = [i for i, box in enumerate(boxes) if box is not None]
-        print "frame {}: {} boxes".format(frame_id, len(valid_index))
+        logging.info("frame {}: {} boxes".format(frame_id, len(valid_index)))
         for box, track_id in zip(valid_boxes, valid_index):
             scores = googlenet_det(img, box, net)
             new_tracks[track_id].append(

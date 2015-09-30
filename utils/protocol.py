@@ -109,6 +109,7 @@ Protocols
 """
 
 from common import isimg
+from log import logging
 import json
 import hashlib
 import os
@@ -172,7 +173,7 @@ def sample_vid_proto(vid_proto, stride=10):
     new_vid['video'] = vid_proto['video']
     new_vid['root_path'] = vid_proto['root_path']
     idx = np.arange(0, len(vid_proto['frames']), stride)
-    print "Sampling video by 1 / {}.".format(stride)
+    logging.info("Sampling video by 1 / {}.".format(stride))
     new_vid['frames'] = [vid_proto['frames'][i] for i in idx]
     return new_vid
 

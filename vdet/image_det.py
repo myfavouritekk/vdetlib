@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import os
 from ..utils.common import im_transform, img_crop, rcnn_img_crop, Pool, timeout
+from ..utils.log import logging
 from ..utils.protocol import proto_load, proto_dump
 from ..utils.cython_nms import nms
 import sys
@@ -118,6 +119,7 @@ def googlenet_features(img, boxes, net, blob_name):
             try:
                 features = np.r_[features, cur_feat]
             except ValueError, e:
+                logging.error("Unable to concatenate features.")
                 print features.shape, cur_feat.shape
                 raise e
     os.environ['GLOG_minloglevel'] = orig_loglevel
@@ -134,7 +136,7 @@ def svm_scores(features, svm_model):
 def apply_image_nms(boxes, scores, thres=0.3):
     box_score = np.asarray(np.r_['-1', boxes, np.reshape(scores, (-1,1))],
                            dtype='float32')
-    print "Applying nms to image."
+    logging.info("Applying nms to image.")
     keep = nms(box_score, thres)
-    print "{} / {} boxes kept.".format(len(keep), len(boxes))
+    logging.info("{} / {} boxes kept.".format(len(keep), len(boxes)))
     return keep
