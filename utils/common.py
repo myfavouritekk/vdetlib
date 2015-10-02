@@ -1,4 +1,5 @@
 import os
+import re
 import argparse
 import codecs
 import cPickle
@@ -124,6 +125,23 @@ def write_window_file(file_path, windows):
             bbox = ' '.join(map(str, bbox))
             lines.append('{} {:.3f} {}'.format(label, overlap, bbox))
     write_list(lines, file_path)
+
+def tryint(s):
+    try:
+        return int(s)
+    except:
+        return s
+
+def alphanum_key(s):
+    """ Turn a string into a list of string and number chunks.
+        "z23a" -> ["z", 23, "a"]
+    """
+    return [ tryint(c) for c in re.split('([0-9]+)', s) ]
+
+def sort_nicely(l):
+    """ Sort the given list in the way that humans expect.
+    """
+    l.sort(key=alphanum_key)
 
 
 def img_crop(img, bbox, crop_mode, crop_size, padding, pad_value, gt=None):

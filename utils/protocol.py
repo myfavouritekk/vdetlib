@@ -108,7 +108,7 @@ Protocols
     ```
 """
 
-from common import isimg
+from common import isimg, sort_nicely
 from log import logging
 import json
 import hashlib
@@ -140,6 +140,7 @@ def vid_proto_from_dir(root_dir, vid_name=None):
     vid['root_path'] = root_dir
     frames = []
     frame_list = [i for i in os.listdir(root_dir) if isimg(i)]
+    sort_nicely(frame_list)
     for index, path in enumerate(frame_list):
         frames.append({'frame': index+1,
                        'path': path})
