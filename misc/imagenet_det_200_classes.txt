@@ -7,95 +7,95 @@ apple
 armadillo
 artichoke
 axe
-baby bed
+baby_bed
 backpack
 bagel
-balance beam
+balance_beam
 banana
-band aid
+band_aid
 banjo
 baseball
 basketball
-bathing cap
+bathing_cap
 beaker
 bear
 bee
-bell pepper
+bell_pepper
 bench
 bicycle
 binder
 bird
 bookshelf
 bow
-bow tie
+bow_tie
 bowl
 brassiere
 burrito
 bus
 butterfly
 camel
-can opener
+can_opener
 car
 cart
 cattle
 cello
 centipede
-chain saw
+chain_saw
 chair
 chime
-cocktail shaker
-coffee maker
-computer keyboard
-computer mouse
+cocktail_shaker
+coffee_maker
+computer_keyboard
+computer_mouse
 corkscrew
 cream
-croquet ball
+croquet_ball
 crutch
 cucumber
-cup or mug
+cup_or_mug
 diaper
-digital clock
+digital_clock
 dishwasher
 dog
-domestic cat
+domestic_cat
 dragonfly
 drum
 dumbbell
-electric fan
+electric_fan
 elephant
-face powder
+face_powder
 fig
-filing cabinet
-flower pot
+filing_cabinet
+flower_pot
 flute
 fox
-french horn
+french_horn
 frog
-frying pan
-giant panda
+frying_pan
+giant_panda
 goldfish
-golf ball
+golf_ball
 golfcart
 guacamole
 guitar
-hair dryer
-hair spray
+hair_dryer
+hair_spray
 hamburger
 hammer
 hamster
 harmonica
 harp
-hat with a wide brim
-head cabbage
+hat_with_a_wide_brim
+head_cabbage
 helmet
 hippopotamus
-horizontal bar
+horizontal_bar
 horse
 hotdog
 iPod
 isopod
 jellyfish
-koala bear
+koala_bear
 ladle
 ladybug
 lamp
@@ -109,46 +109,46 @@ maillot
 maraca
 microphone
 microwave
-milk can
+milk_can
 miniskirt
 monkey
 motorcycle
 mushroom
 nail
-neck brace
+neck_brace
 oboe
 orange
 otter
-pencil box
-pencil sharpener
+pencil_box
+pencil_sharpener
 perfume
 person
 piano
 pineapple
-ping-pong ball
+ping-pong_ball
 pitcher
 pizza
-plastic bag
-plate rack
+plastic_bag
+plate_rack
 pomegranate
 popsicle
 porcupine
-power drill
+power_drill
 pretzel
 printer
 puck
-punching bag
+punching_bag
 purse
 rabbit
 racket
 ray
-red panda
+red_panda
 refrigerator
-remote control
-rubber eraser
-rugby ball
+remote_control
+rubber_eraser
+rugby_ball
 ruler
-salt or pepper shaker
+salt_or_pepper_shaker
 saxophone
 scorpion
 screwdriver
@@ -160,8 +160,8 @@ snail
 snake
 snowmobile
 snowplow
-soap dispenser
-soccer ball
+soap_dispenser
+soccer_ball
 sofa
 spatula
 squirrel
@@ -172,30 +172,30 @@ strainer
 strawberry
 stretcher
 sunglasses
-swimming trunks
+swimming_trunks
 swine
 syringe
 table
-tape player
-tennis ball
+tape_player
+tennis_ball
 tick
 tie
 tiger
 toaster
-traffic light
+traffic_light
 train
 trombone
 trumpet
 turtle
-tv or monitor
+tv_or_monitor
 unicycle
 vacuum
 violin
 volleyball
-waffle iron
+waffle_iron
 washer
-water bottle
+water_bottle
 watercraft
 whale
-wine bottle
+wine_bottle
 zebra

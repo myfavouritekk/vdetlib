@@ -1,28 +1,26 @@
 __background__
 airplane
+antelope
 bear
 bicycle
 bird
 bus
-camel
 car
 cattle
 dog
-domestic cat
+domestic_cat
 elephant
 fox
-giant panda
+giant_panda
 hamster
-hippopotamus
 horse
+lion
 lizard
 monkey
 motorcycle
-porcupine
 rabbit
-red panda
+red_panda
 sheep
-skunk
 snake
 squirrel
 tiger
