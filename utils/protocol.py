@@ -106,6 +106,37 @@ Protocols
             ]
         }
     ```
+- annotation: .annot
+    ```json
+        {
+            "video": "video_name",
+            "annotations": [
+                {
+                    "id": "track_id"
+                    "track":[
+                        {
+                            "frame": 1,
+                            "bbox": [x1, y1, x2, y2],
+                            "name": WNID,
+                            "class": "class1",
+                            "class_index": idx1
+                        },
+                        {
+                            "frame": 2,
+                            "bbox": [x1, y1, x2, y2],
+                            "name": WNID,
+                            "class": "class1",
+                            "class_index": idx1
+                        }
+                    ]
+                },  // tracklet 1
+                {
+                    // tracklet 2
+                }
+                // ...
+            ]
+        }
+    ```
 """
 
 from common import isimg, sort_nicely
