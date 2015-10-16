@@ -119,7 +119,10 @@ Protocols
                             "bbox": [x1, y1, x2, y2],
                             "name": WNID,
                             "class": "class1",
-                            "class_index": idx1
+                            "class_index": idx1,
+                            "generated": bool,
+                            "occluded": bool,
+                            "frame_size": [height, width]
                         },
                         {
                             "frame": 2,
@@ -127,6 +130,9 @@ Protocols
                             "name": WNID,
                             "class": "class1",
                             "class_index": idx1
+                            "generated": bool,
+                            "occluded": bool
+                            "frame_size": [height, width]
                         }
                     ]
                 },  // tracklet 1

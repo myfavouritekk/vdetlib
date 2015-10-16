@@ -64,6 +64,8 @@ if __name__ == '__main__':
         with open(xml_file, 'r') as f:
             xml = xmltodict.parse(f.read())['annotation']
         frame = int(xml['filename']) + 1 # frame id
+        frame_width = int(xml['size']['width'])
+        frame_height = int(xml['size']['height'])
         try:
             obj = xml['object']
         except KeyError, e:
@@ -89,16 +91,23 @@ if __name__ == '__main__':
             name = str(box['name'])
             cls_name = name_map[name][1]
             cls_idx = name_map[name][0]
+            generated = int(box['generated'])
+            occluded = int(box['occluded'])
             track['track'].append(
                     {
                         "frame": frame,
                         "bbox": bbox,
                         "name": name,
                         "class": cls_name,
-                        "class_index": cls_idx
+                        "class_index": cls_idx,
+                        "generated": generated,
+                        "occluded": occluded,
+                        "frame_size": [frame_height, frame_width]
                     }
                 )
 
     annot['annotations'] = annotations
+    if not os.path.isdir(os.path.dirname(args.save_file)):
+        os.makedirs(os.path.dirname(args.save_file))
     with open(args.save_file, 'w') as f:
         json.dump(annot, f, indent=2)
