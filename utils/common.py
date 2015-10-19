@@ -431,3 +431,24 @@ def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
 
     return decorator
 
+
+def iou(boxes1, boxes2):
+    boxes1 = np.asarray(boxes1)
+    boxes2 = np.asarray(boxes2)
+    # intersection boundaries, widths and heights
+    ix1 = np.maximum(boxes1[:,[0]], boxes2[:,[0]].T)
+    ix2 = np.minimum(boxes1[:,[2]], boxes2[:,[2]].T)
+    iy1 = np.maximum(boxes1[:,[1]], boxes2[:,[1]].T)
+    iy2 = np.minimum(boxes1[:,[3]], boxes2[:,[3]].T)
+    iw = np.maximum(0, ix2 - ix1 + 1)
+    ih = np.maximum(0, iy2 - iy1 + 1)
+    # areas
+    areas1 = (boxes1[:, [2]] - boxes1[:, [0]] + 1) * \
+             (boxes1[:, [3]] - boxes1[:, [1]] + 1)
+    areas2 = (boxes2[:, [2]] - boxes2[:, [0]] + 1) * \
+             (boxes2[:, [3]] - boxes2[:, [1]] + 1)
+    inter = iw * ih
+    overlaps = 1. * inter / (areas1 + areas2.T - inter)
+    return overlaps
+
+
