@@ -6,18 +6,11 @@ import cPickle
 import numpy as np
 import matplotlib as mpl
 from scipy.misc import imresize
-import scipy.io as sio
-import subprocess32 as sp
 from multiprocessing import Pool
-import sys
-sys.path.insert(1, os.path.join(os.path.dirname(__file__),
-                        '../../External/caffe/python/'))
-import caffe
+import scipy.io as sio
 import cv2
 import subprocess
-import matlab.engine
 import shlex
-import tempfile
 from log import logging
 
 def pickle(data, file_path):
@@ -300,6 +293,7 @@ def get_voc_cmap():
 
 
 def os_command(command):
+    import subprocess32 as sp
     sp.call(command)
 
 
@@ -336,6 +330,7 @@ def matlab_engine(fun_file, input_list):
     '''matlab enginer wrapper
     return_val = fun(input_list)
     '''
+    import matlab.engine
     script_dirname = os.path.abspath(os.path.dirname(fun_file))
     fun_name = stem(fun_file)
     eng = matlab.engine.start_matlab('-nodisplay -nojvm -nosplash -nodesktop')
@@ -373,7 +368,13 @@ def imwrite(filename, img):
     cv2.imwrite(filename, img)
 
 
-def caffe_net(model, param, gpu_id=0, phase=caffe.TEST):
+def caffe_net(model, param, gpu_id=0, phase=None):
+    import sys
+    sys.path.insert(1, os.path.join(os.path.dirname(__file__),
+                        '../../External/caffe/python/'))
+    import caffe
+    if phase is None:
+        phase = caffe.TEST
     os.environ['GLOG_minloglevel'] = '2'
     caffe.set_mode_gpu()
     caffe.set_device(gpu_id)
@@ -382,6 +383,7 @@ def caffe_net(model, param, gpu_id=0, phase=caffe.TEST):
 
 
 def temp_file(suffix=''):
+    import tempfile
     f, output_filename = tempfile.mkstemp(suffix=suffix)
     os.close(f)
     return output_filename
@@ -406,9 +408,7 @@ def svm_from_rcnn_model(rcnn_model):
     svm['feat_norm_mean'] = rcnn_model['training_opts'][0,0]['feat_norm_mean'][0,0][0,0]
     return svm
 
-from functools import wraps
 import errno
-import signal
 
 class TimeoutError(Exception):
     pass
@@ -419,6 +419,8 @@ def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
             raise TimeoutError(error_message)
 
         def wrapper(*args, **kwargs):
+            from functools import wraps
+            import signal
             signal.signal(signal.SIGALRM, _handle_timeout)
             signal.alarm(seconds)
             try:
