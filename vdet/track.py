@@ -65,14 +65,14 @@ def fcn_tracker(vid_proto, det, gpu=0):
         fw_trk = matlab_engine(script,
                     [matlab.double(bbox),] + fw_frames + [gpu,])
     except:
-        logging.error("Forward tracking failed.")
+        logging.error("Forward tracking failed: {}".format(sys.exc_info()[0]))
         fw_trk = [bbox+[1.]]+[[float('nan')]*5]*(len(fw_frames)-1)
 
     try:
         bw_trk = matlab_engine(script,
                     [matlab.double(bbox),] + bw_frames + [gpu,])
     except:
-        logging.error("Backward tracking failed.")
+        logging.error("Backward tracking failed: {}".format(sys.exc_info()[0]))
         bw_trk = [[float('nan')]*5]*(len(bw_frames)-1) + [bbox+[1.]]
 
     bw_trk = bw_trk[::-1]
