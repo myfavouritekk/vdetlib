@@ -15,6 +15,7 @@ def add_bbox(img, boxes, colors=None):
     for box_id, bbox in enumerate(boxes):
         if bbox is None:
             continue
+        bbox = map(int, bbox)
         color = colors[box_id]
         color = tuple([int(255*x) for x in color])
         cv2.rectangle(result, (bbox[0], bbox[1]), (bbox[2], bbox[3]),
