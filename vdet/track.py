@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import sys
 from scipy.io import loadmat
 import numpy as np
 import matlab
@@ -54,7 +55,7 @@ def fcn_tracker(vid_proto, det, gpu=0):
 
     script = os.path.join(os.path.dirname(__file__),
         '../../External/fcn_tracker_matlab/fcn_tracker.m')
-    bbox = det['bbox']
+    bbox = map(int, det['bbox'])
     frame_id = det['frame']
     fw_frames = frame_path_after(vid_proto, frame_id)
     bw_frames = frame_path_before(vid_proto, frame_id)[::-1]
