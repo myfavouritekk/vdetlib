@@ -129,7 +129,7 @@ Protocols
                             "bbox": [x1, y1, x2, y2],
                             "name": WNID,
                             "class": "class1",
-                            "class_index": idx1
+                            "class_index": idx1,
                             "generated": bool,
                             "occluded": bool
                             "frame_size": [height, width]
@@ -152,20 +152,29 @@ import hashlib
 import os
 import copy
 import numpy as np
+import gzip
 
 ##########################################
 ## General Protocol Manipulation
 ##########################################
 
 def proto_load(file_path):
-    with open(file_path, 'r') as f:
-        obj = json.load(f)
+    if os.path.splitext(file_path)[1] == '.gz':
+        with gzip.GzipFile(file_path) as f:
+            obj = json.loads(f.read())
+    else:
+        with open(file_path, 'r') as f:
+            obj = json.load(f)
     return obj
 
 
 def proto_dump(obj, file_path):
-    with open(file_path, 'w') as f:
-        json.dump(obj, f, indent=2)
+    if os.path.splitext(file_path)[1] == '.gz':
+        with gzip.GzipFile(file_path, 'w', 1) as f:
+            f.write(json.dumps(obj))
+    else:
+        with open(file_path, 'w') as f:
+            json.dump(obj, f, indent=2)
 
 
 ##########################################
