@@ -103,7 +103,7 @@ def track_from_det(vid_proto, det_proto, track_method):
 
 
 def greedily_track_from_det(vid_proto, det_proto, track_method,
-                            score_fun, max_tracks, gpu=0):
+                            score_fun, max_tracks, gpu=0, thres=-2.5):
     '''greedily track top detections and supress detections
        that have large overlaps with tracked boxes'''
     assert vid_proto['video'] == det_proto['video']
@@ -116,14 +116,19 @@ def greedily_track_from_det(vid_proto, det_proto, track_method,
     num_tracks = 0
     while len(dets) > 0 and num_tracks < max_tracks:
         # Tracking top detection
-        num_tracks += 1
-        logging.info("tracking top No.{} in {}".format(num_tracks, vid_proto['video']))
         dets = sorted(dets, key=lambda x:score_fun(x), reverse=True)
+        topDet = dets[0]
+        # stop tracking if confidence too low
+        if score_fun(topDet) < thres:
+            print "Upon low confidence: total {} tracks".format(num_tracks)
+            break
         tracks.extend(track_method(vid_proto, dets[0], gpu=gpu))
+        num_tracks += 1
 
         # NMS
         boxes = [[x['frame'],]+x['bbox']+[score_fun(x),] \
                  for x in dets]
+        logging.info("tracking top No.{} in {}".format(num_tracks, vid_proto['video']))
         keep = apply_track_det_nms(tracks, boxes, thres=0.3)
         dets = copy.copy([dets[i] for i in keep])
 
