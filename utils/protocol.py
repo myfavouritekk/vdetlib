@@ -171,7 +171,7 @@ def proto_load(file_path):
 def proto_dump(obj, file_path):
     if os.path.splitext(file_path)[1] == '.gz':
         with gzip.GzipFile(file_path, 'w', 1) as f:
-            f.write(json.dumps(obj))
+            f.write(json.dumps(obj, indent=2))
     else:
         with open(file_path, 'w') as f:
             json.dump(obj, f, indent=2)
