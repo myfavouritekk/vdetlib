@@ -159,6 +159,10 @@ import gzip
 ##########################################
 
 def proto_load(file_path):
+    # load .gz version if exists
+    # AD_HOC implementation
+    if os.path.isfile(file_path + '.gz'):
+        file_path += '.gz'
     if os.path.splitext(file_path)[1] == '.gz':
         with gzip.GzipFile(file_path) as f:
             obj = json.loads(f.read())
@@ -170,11 +174,18 @@ def proto_load(file_path):
 
 def proto_dump(obj, file_path):
     if os.path.splitext(file_path)[1] == '.gz':
-        with gzip.GzipFile(file_path, 'w', 1) as f:
-            f.write(json.dumps(obj, indent=2))
-    else:
-        with open(file_path, 'w') as f:
-            json.dump(obj, f, indent=2)
+        try:
+            with gzip.GzipFile(file_path, 'w', 1) as f:
+                f.write(json.dumps(obj, indent=2))
+                return
+        except OverflowError:
+            print "Buffer exceeds 2GB, fallback to regular file."
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+            file_path = os.path.splitext(file_path)[0]
+
+    with open(file_path, 'w') as f:
+        json.dump(obj, f, indent=2)
 
 
 ##########################################
