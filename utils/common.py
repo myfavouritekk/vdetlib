@@ -337,9 +337,17 @@ def matlab_engine(fun_file, input_list, eng):
         eng = matlab.engine.start_matlab('-nodisplay -nojvm -nosplash -nodesktop')
     else:
         logging.debug("Use opened Matlab session: {}".format(eng))
-    eng.cd(script_dirname)
-    func = getattr(eng, fun_name)
-    result = func(input_list)
+    try:
+        eng.cd(script_dirname)
+        func = getattr(eng, fun_name)
+        result = func(input_list)
+    except matlab.engine.EngineError:
+        # Use new engine instead
+        logging.error("Starting a new matlab engine...")
+        eng = matlab.engine.start_matlab('-nodisplay -nojvm -nosplash -nodesktop')
+        eng.cd(script_dirname)
+        func = getattr(eng, fun_name)
+        result = func(input_list)
     if eng is None:
         logging.debug("before matlab quiting...")
         eng.quit()
