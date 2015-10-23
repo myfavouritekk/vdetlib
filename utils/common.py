@@ -326,20 +326,24 @@ def matlab_command(fun_file, input_list, outfile):
         return True
 
 
-def matlab_engine(fun_file, input_list):
+def matlab_engine(fun_file, input_list, eng):
     '''matlab enginer wrapper
     return_val = fun(input_list)
     '''
     import matlab.engine
     script_dirname = os.path.abspath(os.path.dirname(fun_file))
     fun_name = stem(fun_file)
-    eng = matlab.engine.start_matlab('-nodisplay -nojvm -nosplash -nodesktop')
+    if eng is None:
+        eng = matlab.engine.start_matlab('-nodisplay -nojvm -nosplash -nodesktop')
+    else:
+        logging.debug("Use opened Matlab session: {}".format(eng))
     eng.cd(script_dirname)
     func = getattr(eng, fun_name)
     result = func(input_list)
-    logging.debug("before matlab quiting...")
-    eng.quit()
-    logging.debug("after matlab quiting...")
+    if eng is None:
+        logging.debug("before matlab quiting...")
+        eng.quit()
+        logging.debug("after matlab quiting...")
     return result
 
 

@@ -45,7 +45,7 @@ def tld_tracker(vid_proto, det):
     return tracks_proto
 
 
-def fcn_tracker(vid_proto, det, gpu=0):
+def fcn_tracker(vid_proto, det, gpu=0, engine=None):
     # suppress caffe logs
     try:
         orig_loglevel = os.environ['GLOG_minloglevel']
@@ -63,14 +63,14 @@ def fcn_tracker(vid_proto, det, gpu=0):
     tic = time.time()
     try:
         fw_trk = matlab_engine(script,
-                    [matlab.double(bbox),] + fw_frames + [gpu,])
+                    [matlab.double(bbox),] + fw_frames + [gpu,], engine)
     except:
         logging.error("Forward tracking failed: {}".format(sys.exc_info()[0]))
         fw_trk = [bbox+[1.]]+[[float('nan')]*5]*(len(fw_frames)-1)
 
     try:
         bw_trk = matlab_engine(script,
-                    [matlab.double(bbox),] + bw_frames + [gpu,])
+                    [matlab.double(bbox),] + bw_frames + [gpu,], engine)
     except:
         logging.error("Backward tracking failed: {}".format(sys.exc_info()[0]))
         bw_trk = [[float('nan')]*5]*(len(bw_frames)-1) + [bbox+[1.]]
@@ -103,7 +103,7 @@ def track_from_det(vid_proto, det_proto, track_method):
 
 
 def greedily_track_from_det(vid_proto, det_proto, track_method,
-                            score_fun, max_tracks, gpu=0, thres=-2.5):
+                            score_fun, max_tracks, gpu=0, thres=-2.5, engine=None):
     '''greedily track top detections and supress detections
        that have large overlaps with tracked boxes'''
     assert vid_proto['video'] == det_proto['video']
@@ -122,7 +122,7 @@ def greedily_track_from_det(vid_proto, det_proto, track_method,
         if score_fun(topDet) < thres:
             print "Upon low confidence: total {} tracks".format(num_tracks)
             break
-        tracks.extend(track_method(vid_proto, dets[0], gpu=gpu))
+        tracks.extend(track_method(vid_proto, dets[0], gpu=gpu, engine=engine))
         num_tracks += 1
 
         # NMS
