@@ -39,14 +39,16 @@ Protocols
                     {
                         "frame": 1,
                         "bbox": [x1, y1, x2, y2],
-                        "score": score1
-                        "hash": md5("video_name_frameid_x1_y1_x2_y2")
+                        "score": score1,
+                        "hash": md5("video_name_frameid_x1_y1_x2_y2"),
+                        "anchor": int
                     },
                     {
                         "frame": 2,
                         "bbox": [x1, y1, x2, y2],
-                        "score": score2
-                        "hash": md5("video_name_frameid_x1_y1_x2_y2")
+                        "score": score2,
+                        "hash": md5("video_name_frameid_x1_y1_x2_y2"),
+                        "anchor": int
                     }
                 ],  // tracklet 1
                 [
@@ -325,7 +327,7 @@ def bbox_hash(video_name, frame_id, bbox):
 ## Tracking Protocol
 ##########################################
 
-def tracks_proto_from_boxes(boxes, video_name, start_frame):
+def tracks_proto_from_boxes(boxes, video_name, anchor, start_frame=1):
     tracks_proto = []
     started = False
     for frame_idx, bbox in enumerate(boxes, start=start_frame):
@@ -343,7 +345,8 @@ def tracks_proto_from_boxes(boxes, video_name, start_frame):
                     'frame': frame_idx,
                     'bbox': [int(cor) for cor in bbox[0:4]],
                     'hash': bbox_hash(video_name, frame_idx, bbox),
-                    'score': float(bbox[4])
+                    'score': float(bbox[4]),
+                    'anchor': int(frame_idx - anchor)
                 }
             )
     if started:

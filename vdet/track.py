@@ -81,7 +81,8 @@ def fcn_tracker(vid_proto, det, gpu=0, engine=None):
     toc = time.time()
     logging.info("Speed: {:02f} fps".format(len(trk) / (toc-tic)))
     start_frame = frame_id - len(bw_trk) + 1;
-    tracks_proto = tracks_proto_from_boxes(trk, vid_proto['video'], start_frame)
+    tracks_proto = tracks_proto_from_boxes(trk, vid_proto['video'],
+            frame_id, start_frame)
 
     # reset log level
     os.environ['GLOG_minloglevel'] = orig_loglevel
