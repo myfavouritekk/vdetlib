@@ -221,11 +221,10 @@ def rcnn_img_crop(img, bbox, crop_mode, crop_size, padding, image_mean=None):
                 half_width = half_height
             else:
                 half_height = half_width
-        bbox = [center[0] - half_width * scale,
+        bbox = map(round, [center[0] - half_width * scale,
                 center[1] - half_height * scale,
                 center[0] + half_width * scale,
-                center[1] + half_height * scale]
-        unclipped_bbox = map(int, map(round, bbox))
+                center[1] + half_height * scale])
         unclipped_height = bbox[3] - bbox[1] + 1
         unclipped_width = bbox[2] - bbox[0] + 1
         pad_x1 = max(0, -bbox[0])
@@ -249,16 +248,18 @@ def rcnn_img_crop(img, bbox, crop_mode, crop_size, padding, image_mean=None):
         if pad_x1 + crop_width > crop_size:
             crop_width = crop_size - pad_x1
 
+    bbox = map(int, bbox)
     img_window = img[bbox[1]:bbox[3]+1, bbox[0]:bbox[2]+1, :]
-    tmp = imresize(img_window, [crop_height, crop_width])
+    tmp = cv2.resize(img_window.astype('float'), (crop_width, crop_height),
+            interpolation=cv2.INTER_LINEAR).astype('float')
     if image_mean is not None:
         tmp -= image_mean.reshape((1,1,3))
-    img_window = np.ones((crop_size, crop_size, 3)).astype('single')
+    img_window = np.zeros((crop_size, crop_size, 3)).astype('single')
     img_window[pad_h:pad_h+crop_height, pad_w:pad_w+crop_width] = tmp
 
     visual_debug = False
     if visual_debug:
-        cv2.imshow('proposal', img_window)
+        cv2.imshow('proposal', img_window / 255.)
         cv2.waitKey(0)
 
     return img_window
