@@ -128,7 +128,9 @@ def googlenet_features(img, boxes, net, blob_name):
 
 
 def svm_scores(features, svm_model):
-    features = np.asarray(features) * (20 / svm_model['feat_norm_mean'])
+    if features.ndim == 4:
+        features = np.squeeze(features, axis=(2,3))
+    features = np.asarray(features) * (20. / svm_model['feat_norm_mean'])
     scores = np.dot(features, svm_model['W']) + svm_model['B']
     return scores
 

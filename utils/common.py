@@ -327,7 +327,7 @@ def matlab_command(fun_file, input_list, outfile):
         return True
 
 
-def matlab_engine(fun_file, input_list, eng):
+def matlab_engine(fun_file, input_list, eng=None):
     '''matlab enginer wrapper
     return_val = fun(input_list)
     '''
@@ -422,6 +422,7 @@ def svm_from_rcnn_model(rcnn_model):
     return svm
 
 import errno
+from functools import wraps
 
 class TimeoutError(Exception):
     pass
@@ -432,7 +433,6 @@ def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
             raise TimeoutError(error_message)
 
         def wrapper(*args, **kwargs):
-            from functools import wraps
             import signal
             signal.signal(signal.SIGALRM, _handle_timeout)
             signal.alarm(seconds)
