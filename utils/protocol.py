@@ -108,6 +108,44 @@ Protocols
             ]
         }
     ```
+- score: .score
+    ```json
+        {
+            "video": "video_name",
+            "method": "scoring_method_name",
+            "tubelets": [
+                {
+                    "gt": bool,
+                    "class": class_name,
+                    "class_index": class_index,
+                    "boxes": [
+                        {
+                            "frame": 1,
+                            "bbox": [x1, y1, x2, y2],
+                            "track_score": track_score1,
+                            "det_score": det_score1,
+                            "hash": md5("video_name_frameid_x1_y1_x2_y2"),
+                            "anchor": int,
+                            "gt_overlap": iou_value
+                        },
+                        {
+                            "frame": 2,
+                            "bbox": [x1, y1, x2, y2],
+                            "track_score": track_score2,
+                            "det_score": det_score2,
+                            "hash": md5("video_name_frameid_x1_y1_x2_y2"),
+                            "anchor": int,
+                            "gt_overlap": iou_value
+                        }
+                    ]
+                },  // tubelet 1
+                {
+                    // tubelet 2
+                }
+                // ...
+            ]
+        }
+    ```
 - annotation: .annot
     ```json
         {
@@ -147,7 +185,8 @@ Protocols
     ```
 """
 
-from common import isimg, sort_nicely
+from common import isimg, sort_nicely, iou
+from ..vdet.dataset import imagenet_vdet_classes
 from log import logging
 import json
 import hashlib
@@ -359,3 +398,79 @@ def track_box_at_frame(tracklet, frame_id):
         if box['frame'] == frame_id:
             return box['bbox']
     return None
+
+def track_proto_from_annot_proto(annot_proto):
+    vid_name = annot_proto['video']
+    track_proto = {}
+    track_proto['video'] = vid_name
+    track_proto['method'] = 'gt'
+    tracks_proto = []
+    for annot_track in annot_proto['annotations']:
+        cur_track = []
+        for annot_box in annot_track['track']:
+            cur_track.append(
+                {
+                    "frame": annot_box['frame'],
+                    "bbox": annot_box['bbox'],
+                    "score": 1,
+                    "anchor": 0,
+                    "hash": bbox_hash(vid_name, annot_box['frame'], annot_box['bbox'])
+                }
+            )
+        tracks_proto.append(cur_track)
+    track_proto['tracks'] = tracks_proto
+    return track_proto
+
+##########################################
+## Scoring Protocol
+##########################################
+def tubelets_proto_from_tracks_proto(tracks_proto, class_index):
+    tubelet_proto = []
+    for track in tracks_proto:
+        tubelet = {}
+        tubelet['gt'] = 0
+        tubelet['class_index'] = class_index
+        tubelet['class'] = imagenet_vdet_classes[class_index]
+        tubelet_boxes = []
+        for box in track:
+            tubelet_box = copy.copy(box)
+            tubelet_box['track_score'] = tubelet_box['score']
+            del tubelet_box['score']
+            tubelet_boxes.append(tubelet_box)
+        tubelet['boxes'] = tubelet_boxes
+        tubelet_proto.append(tubelet)
+    return tubelet_proto
+
+
+def tubelets_overlap(tubelets_proto, annot_proto, class_idx):
+    for tubelet in tubelets_proto:
+        class_index = tubelet['class_index']
+        ious = []
+        # for each tubelet_box find the best gt_overlap
+        for tubelet_box in tubelet['boxes']:
+            tubelet_box['gt_overlap'] = 0
+            for annot_track in annot_proto['annotations']:
+                for annot_box in annot_track['track']:
+                    if annot_box['class_index'] != class_index:
+                        # only need to check class of first annot_box, so we break
+                        break
+                    if tubelet_box['frame'] == annot_box['frame']:
+                        cur_iou = iou([annot_box['bbox']],  [tubelet_box['bbox']])
+                        # convert ndarray to a scalar
+                        cur_iou = float(cur_iou.ravel())
+                        if 'gt_overlap' not in tubelet_box or cur_iou > tubelet_box['gt_overlap']:
+                            tubelet_box['gt_overlap'] = cur_iou
+        ious = [box['gt_overlap'] for box in tubelet['boxes']]
+        mean_iou = np.asarray(ious).mean()
+        if abs(mean_iou - 1) < np.finfo(float).eps:
+            tubelet['gt'] = 1
+    return tubelets_proto
+
+
+def tubelet_box_at_frame(tubelet, frame_id):
+    for box in tubelet['boxes']:
+        if box['frame'] == frame_id:
+            return box['bbox']
+    return None
+
+
