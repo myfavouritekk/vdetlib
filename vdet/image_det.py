@@ -10,6 +10,8 @@ from ..utils.cython_nms import nms
 import sys
 sys.path.insert(1, os.path.join(os.path.dirname(__file__),
     '../../External/fast-rcnn/lib/'))
+sys.path.insert(1, os.path.join(os.path.dirname(__file__),
+    '../../External/fast-rcnn/caffe-fast-rcnn/python'))
 from fast_rcnn.test import im_detect
 
 

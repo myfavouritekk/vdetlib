@@ -10,6 +10,8 @@ import sys
 import os
 sys.path.insert(1, os.path.join(os.path.dirname(__file__),
     '../../External/fast-rcnn/lib/'))
+sys.path.insert(1, os.path.join(os.path.dirname(__file__),
+    '../../External/fast-rcnn/caffe-fast-rcnn/python'))
 from fast_rcnn.test import im_detect
 
 
@@ -70,6 +72,8 @@ def rcnn_scoring(vid_proto, track_proto, net, class_idx, rcnn_model):
         valid_boxes = np.asarray([box for box in boxes if box is not None])
         valid_index = [i for i, box in enumerate(boxes) if box is not None]
         logging.info("frame {}: {} boxes".format(frame_id, len(valid_index)))
+        if len(valid_index) == 0:
+            continue
         features = googlenet_features(img, valid_boxes, net, 'pool5')
         scores = svm_scores(features, svm_model)
         if scores.shape[1] == 200:
