@@ -106,11 +106,10 @@ def googlenet_features(img, boxes, net, blob_name):
     batch_size = 128
     slice_points = np.arange(0, len(boxes), batch_size)[1:]
     features = None
+    processer = RCNNProcesser(img, 'warp', size, 16, mean_values)
 
-    pool = Pool()
     for batch_boxes in np.split(np.asarray(boxes), slice_points):
-        processer = RCNNProcesser(img, 'warp', size, 16, mean_values)
-        patches = np.asarray(pool.map(processer, batch_boxes))
+        patches = np.asarray(map(processer, batch_boxes))
         net.blobs['data'].reshape(*(patches.shape))
         net.blobs['data'].data[...] = patches
         net.forward()
@@ -125,7 +124,6 @@ def googlenet_features(img, boxes, net, blob_name):
                 print features.shape, cur_feat.shape
                 raise e
     os.environ['GLOG_minloglevel'] = orig_loglevel
-    pool.terminate()
     return np.asarray(features)
 
 

@@ -381,13 +381,15 @@ def imwrite(filename, img):
     cv2.imwrite(filename, img)
 
 
-def caffe_net(model, param, gpu_id=0, phase=None):
+def caffe_net(model, param, gpu_id=0, phase='test'):
     import sys
     sys.path.insert(1, os.path.join(os.path.dirname(__file__),
                         '../../External/caffe/python/'))
     import caffe
-    if phase is None:
+    if phase is 'test':
         phase = caffe.TEST
+    else:
+        phase = caffe.TRAIN
     os.environ['GLOG_minloglevel'] = '2'
     caffe.set_mode_gpu()
     caffe.set_device(gpu_id)
