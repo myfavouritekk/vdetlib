@@ -8,12 +8,34 @@ from ..vdet.dataset import imagenet_vdet_classes, index_vdet_to_det
 import numpy as np
 import sys
 import os
-sys.path.insert(1, os.path.join(os.path.dirname(__file__),
-    '../../External/fast-rcnn/lib/'))
-sys.path.insert(1, os.path.join(os.path.dirname(__file__),
-    '../../External/fast-rcnn/caffe-fast-rcnn/python'))
-from fast_rcnn.test import im_detect
+import copy
 
+def score_conv_cls(score_proto, net):
+    new_score_proto = copy.copy(score_proto)
+    print "{}: {} tubelet(s).".format(score_proto['video'], len(new_score_proto['tubelets']))
+    for tubelet in new_score_proto['tubelets']:
+        track = {}
+        track['length'] = len(tubelet['boxes'])
+        track['gt'] = tubelet['gt']
+        track['mean_iou'] = np.mean([map(lambda x:x['gt_overlap'],
+                                  tubelet['boxes'])])
+        track['det_scores'] = map(lambda x:x['det_score'],
+                                  tubelet['boxes'])
+        track['track_scores'] = map(lambda x:x['track_score'],
+                                  tubelet['boxes'])
+        track['anchors'] = map(lambda x:x['anchor'] * 1. / track['length'],
+                                  tubelet['boxes'])
+        track['abs_anchors'] = map(abs, track['anchors'])
+        track['gt_overlaps'] = map(lambda x:x['gt_overlap'],
+                                  tubelet['boxes'])
+        for blob_name in ['det_scores', 'track_scores', 'anchors']:
+            net.blobs[blob_name].reshape(1, 1, track['length'])
+            net.blobs[blob_name].data[...] = np.asarray(track[blob_name], dtype='float32')
+        blobs_out = net.forward()
+        probs = blobs_out['probs'][:,1,:]
+        for box, prob in zip(tubelet['boxes'], probs.ravel()):
+            box['conv_score'] = float(prob)
+    return new_score_proto
 
 def fast_rcnn_cls(video_proto, track_proto, net, class_idx):
     new_tracks = [[] for _ in track_proto['tracks']]
