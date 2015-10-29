@@ -124,6 +124,7 @@ Protocols
                             "bbox": [x1, y1, x2, y2],
                             "track_score": track_score1,
                             "det_score": det_score1,
+                            "conv_score": conv_score1,
                             "hash": md5("video_name_frameid_x1_y1_x2_y2"),
                             "anchor": int,
                             "gt_overlap": iou_value
@@ -133,6 +134,7 @@ Protocols
                             "bbox": [x1, y1, x2, y2],
                             "track_score": track_score2,
                             "det_score": det_score2,
+                            "conv_score": conv_score2,
                             "hash": md5("video_name_frameid_x1_y1_x2_y2"),
                             "anchor": int,
                             "gt_overlap": iou_value
