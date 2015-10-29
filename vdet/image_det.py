@@ -8,12 +8,6 @@ from ..utils.log import logging
 from ..utils.protocol import proto_load, proto_dump
 from ..utils.cython_nms import nms
 import sys
-sys.path.insert(1, os.path.join(os.path.dirname(__file__),
-    '../../External/fast-rcnn/lib/'))
-sys.path.insert(1, os.path.join(os.path.dirname(__file__),
-    '../../External/fast-rcnn/caffe-fast-rcnn/python'))
-from fast_rcnn.test import im_detect
-
 
 def simple_crop(image, bbox):
     bbox = np.asarray(bbox)
@@ -26,6 +20,11 @@ def simple_crop(image, bbox):
 
 
 def fast_rcnn_det(img, boxes, net):
+    sys.path.insert(1, os.path.join(os.path.dirname(__file__),
+        '../../External/fast-rcnn/lib/'))
+    sys.path.insert(1, os.path.join(os.path.dirname(__file__),
+        '../../External/fast-rcnn/caffe-fast-rcnn/python'))
+    from fast_rcnn.test import im_detect
     # suppress caffe logs
     try:
         orig_loglevel = os.environ['GLOG_minloglevel']

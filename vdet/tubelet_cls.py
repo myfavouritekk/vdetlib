@@ -38,6 +38,11 @@ def score_conv_cls(score_proto, net):
     return new_score_proto
 
 def fast_rcnn_cls(video_proto, track_proto, net, class_idx):
+    sys.path.insert(1, os.path.join(os.path.dirname(__file__),
+        '../../External/fast-rcnn/lib/'))
+    sys.path.insert(1, os.path.join(os.path.dirname(__file__),
+        '../../External/fast-rcnn/caffe-fast-rcnn/python'))
+    from fast_rcnn.test import im_detect
     new_tracks = [[] for _ in track_proto['tracks']]
     for frame in video_proto['frames']:
         frame_id = frame['frame']
