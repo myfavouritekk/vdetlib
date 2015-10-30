@@ -86,7 +86,8 @@ def googlenet_cls(video_proto, track_proto, net, class_idx):
     return new_tracks
 
 
-def rcnn_scoring(vid_proto, track_proto, net, class_idx, rcnn_model):
+def rcnn_scoring(vid_proto, track_proto, net, class_idx, rcnn_model,
+        save_feat=False, save_all_sc=False):
     svm_model = svm_from_rcnn_model(rcnn_model)
     tubelets_proto = tubelets_proto_from_tracks_proto(track_proto['tracks'], class_idx)
     logging.info("Scoring {} for {}...".format(vid_proto['video'],
@@ -107,11 +108,16 @@ def rcnn_scoring(vid_proto, track_proto, net, class_idx, rcnn_model):
             cls_scores = scores[:, index_vdet_to_det[class_idx] - 1]
         else:
             raise
-        for score, tubelet_id in zip(cls_scores, valid_index):
+        for score, tubelet_id, feat, all_score in \
+                zip(cls_scores, valid_index, features, scores):
             cur_box = [box for box in tubelets_proto[tubelet_id]['boxes'] \
                 if box['frame'] == frame_id]
             assert len(cur_box) == 1
             cur_box[0]['det_score'] = score
+            if save_feat:
+                cur_box[0]['feat'] = feat.ravel().tolist()
+            if save_all_sc:
+                cur_box[0]['all_score'] = all_score.ravel().tolist()
     return tubelets_proto
 
 
