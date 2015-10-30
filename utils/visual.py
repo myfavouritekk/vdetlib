@@ -2,6 +2,8 @@
 import cv2
 import copy
 import colorsys
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 
 def unique_colors(N):
