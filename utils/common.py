@@ -137,8 +137,8 @@ def sort_nicely(l):
     l.sort(key=alphanum_key)
 
 
-def img_crop(img, bbox, crop_mode, crop_size, padding, pad_value, gt=None):
-    bbox -= 1
+def img_crop(img, in_bbox, crop_mode, crop_size, padding, pad_value, gt=None):
+    bbox = in_bbox - 1
     use_square = True if crop_mode == 'square' else False
     pad_w = 0
     pad_h = 0;
@@ -204,8 +204,8 @@ def img_crop(img, bbox, crop_mode, crop_size, padding, pad_value, gt=None):
     return img_window, gt_window, unclipped_bbox
 
 
-def rcnn_img_crop(img, bbox, crop_mode, crop_size, padding, image_mean=None):
-    bbox -= 1
+def rcnn_img_crop(img, in_bbox, crop_mode, crop_size, padding, image_mean=None):
+    bbox = in_bbox - 1
     use_square = True if crop_mode == 'square' else False
     pad_w = 0
     pad_h = 0;
