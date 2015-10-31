@@ -120,6 +120,65 @@ def rcnn_scoring(vid_proto, track_proto, net, class_idx, rcnn_model,
                 cur_box[0]['all_score'] = all_score.ravel().tolist()
     return tubelets_proto
 
+def sampling_boxes(orig_box, num, ratio = 0.05, return_orig=True):
+    h, w = orig_box[3] - orig_box[1], orig_box[2] - orig_box[0]
+    offsets = np.random.uniform(-ratio, ratio, [num, 4]) * [w, h, w, h]
+    if not return_orig:
+        return orig_box + offsets
+    else:
+        return np.vstack((orig_box, orig_box+offsets))
+
+def rcnn_sampling_scoring(vid_proto, track_proto, net, class_idx, rcnn_model,
+        samples_per_box = 32, ratio = 0.05,
+        save_feat=False, save_all_sc=False):
+    svm_model = svm_from_rcnn_model(rcnn_model)
+    tubelets_proto = tubelets_proto_from_tracks_proto(track_proto['tracks'], class_idx)
+    logging.info("Scoring {} for {}...".format(vid_proto['video'],
+                 imagenet_vdet_classes[class_idx]))
+    for frame in vid_proto['frames']:
+        frame_id = frame['frame']
+        img = imread(frame_path_at(vid_proto, frame_id))
+        boxes = [tubelet_box_at_frame(tubelet, frame_id) \
+                 for tubelet in tubelets_proto]
+        valid_boxes = np.asarray([box for box in boxes if box is not None])
+        valid_index = [i for i, box in enumerate(boxes) if box is not None]
+        logging.info("frame {}: {} boxes".format(frame_id, len(valid_index)))
+        if len(valid_index) == 0:
+            continue
+
+        # sample nearby boxes to increase spatial robustness
+        sampled_boxes = np.vstack([sampling_boxes(box, samples_per_box, ratio) \
+                for box in valid_boxes])
+        features = googlenet_features(img, sampled_boxes, net, 'pool5')
+        scores = svm_scores(features, svm_model)
+        if scores.shape[1] == 200:
+            cls_scores = scores[:, index_vdet_to_det[class_idx] - 1]
+            cls_scores = cls_scores.reshape((len(valid_index), -1))
+            max_scores = cls_scores.max(axis=1)
+            # extract cooresponding features and all class scores
+            max_idx = np.argmax(cls_scores, axis=1)
+        else:
+            raise
+
+        # extract features and scores of box with maximum score
+        features = features.reshape((len(valid_index), samples_per_box+1, -1))
+        features = features[xrange(len(valid_index)), max_idx,:]
+        scores = scores.reshape((len(valid_index), samples_per_box+1, -1))
+        scores = scores[xrange(len(valid_index)), max_idx,:]
+        sampled_boxes = sampled_boxes.reshape((len(valid_index), samples_per_box+1, -1))
+        boxes = sampled_boxes[xrange(len(valid_index)), max_idx,:]
+        for score, tubelet_id, feat, all_score, max_box in \
+                zip(max_scores, valid_index, features, scores, boxes):
+            cur_box = [box for box in tubelets_proto[tubelet_id]['boxes'] \
+                if box['frame'] == frame_id]
+            assert len(cur_box) == 1
+            cur_box[0]['det_score'] = score
+            cur_box[0]['bbox'] = max_box.tolist()
+            if save_feat:
+                cur_box[0]['feat'] = feat.ravel().tolist()
+            if save_all_sc:
+                cur_box[0]['all_score'] = all_score.ravel().tolist()
+    return tubelets_proto
 
 def scoring_tracks(vid_proto, track_proto, annot_proto,
         sc_method, net, class_idx):
