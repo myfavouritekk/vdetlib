@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from ..utils.protocol import frame_path_at, track_box_at_frame, bbox_hash, \
-    tubelets_overlap, tubelets_proto_from_tracks_proto, tubelet_box_at_frame
-from ..utils.common import imread, svm_from_rcnn_model
+    tubelets_overlap, tubelets_proto_from_tracks_proto, tubelet_box_at_frame, det_score
+from ..utils.common import imread, svm_from_rcnn_model, iou
 from ..utils.log import logging
 from ..vdet.image_det import googlenet_det, googlenet_features, svm_scores
 from ..vdet.dataset import imagenet_vdet_classes, index_vdet_to_det
@@ -179,6 +179,70 @@ def rcnn_sampling_scoring(vid_proto, track_proto, net, class_idx, rcnn_model,
             if save_all_sc:
                 cur_box[0]['all_score'] = all_score.ravel().tolist()
     return tubelets_proto
+
+def rcnn_sampling_dets_scoring(vid_proto, track_proto, det_proto,
+        net, class_idx, rcnn_model, overlap_thres=0.7,
+        save_feat=False, save_all_sc=False):
+    svm_model = svm_from_rcnn_model(rcnn_model)
+    tubelets_proto = tubelets_proto_from_tracks_proto(track_proto['tracks'], class_idx)
+    logging.info("Scoring {} for {}...".format(vid_proto['video'],
+                 imagenet_vdet_classes[class_idx]))
+    for frame in vid_proto['frames']:
+        frame_id = frame['frame']
+        img = imread(frame_path_at(vid_proto, frame_id))
+        boxes = [tubelet_box_at_frame(tubelet, frame_id) \
+                 for tubelet in tubelets_proto]
+        valid_boxes = np.asarray([box for box in boxes if box is not None])
+        valid_index = [i for i, box in enumerate(boxes) if box is not None]
+        logging.info("frame {}: {} boxes".format(frame_id, len(valid_index)))
+        if len(valid_index) == 0:
+            continue
+        # compute rcnn scores
+        features = googlenet_features(img, valid_boxes, net, 'pool5')
+        scores = svm_scores(features, svm_model)
+        if scores.shape[1] == 200:
+            cls_scores = scores[:, index_vdet_to_det[class_idx] - 1]
+        else:
+            raise
+
+        # find all detection proposal boxes in current frame
+        dets = [det for det in det_proto['detections'] if det['frame']==frame_id]
+        det_boxes = np.asarray(map(lambda x:x['bbox'], dets))
+        det_scores = np.asarray(map(lambda x:det_score(x, class_idx), dets))
+
+        for score, tubelet_id, feat, all_score in \
+                zip(cls_scores, valid_index, features, scores):
+            cur_box = [box for box in tubelets_proto[tubelet_id]['boxes'] \
+                if box['frame'] == frame_id]
+            assert len(cur_box) == 1
+            # calculate overlaps with all det_boxes in current frame
+            overlaps = iou([cur_box[0]['bbox']], det_boxes)
+            conf_idx = (overlaps > overlap_thres).ravel()
+            if np.any(conf_idx):
+                conf_boxes = det_boxes[conf_idx]
+                conf_scores = det_scores[conf_idx]
+                max_idx = np.argmax(conf_scores)
+                max_score = conf_scores[max_idx]
+                max_box = conf_boxes[max_idx].tolist()
+            else:
+                max_score = -np.inf
+            if max_score > score:
+                cur_box[0]['det_score'] = max_score
+                cur_box[0]['bbox'] = max_box
+                max_feat = googlenet_features(img, [max_box], net, 'pool5')
+                max_all_scores = svm_scores(max_feat, svm_model)
+                if save_feat:
+                    cur_box[0]['feat'] = max_feat.ravel().tolist()
+                if save_all_sc:
+                    cur_box[0]['all_score'] = max_all_scores.ravel().tolist()
+            else:
+                cur_box[0]['det_score'] = score
+                if save_feat:
+                    cur_box[0]['feat'] = feat.ravel().tolist()
+                if save_all_sc:
+                    cur_box[0]['all_score'] = all_score.ravel().tolist()
+    return tubelets_proto
+
 
 def scoring_tracks(vid_proto, track_proto, annot_proto,
         sc_method, net, class_idx):
