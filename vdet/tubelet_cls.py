@@ -216,8 +216,11 @@ def rcnn_sampling_dets_scoring(vid_proto, track_proto, det_proto,
                 if box['frame'] == frame_id]
             assert len(cur_box) == 1
             # calculate overlaps with all det_boxes in current frame
-            overlaps = iou([cur_box[0]['bbox']], det_boxes)
-            conf_idx = (overlaps > overlap_thres).ravel()
+            if len(det_boxes) > 0:
+                overlaps = iou([cur_box[0]['bbox']], det_boxes)
+                conf_idx = (overlaps > overlap_thres).ravel()
+            else:
+                conf_idx = [False]
             if np.any(conf_idx):
                 conf_boxes = det_boxes[conf_idx]
                 conf_scores = det_scores[conf_idx]
