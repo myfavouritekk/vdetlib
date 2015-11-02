@@ -475,4 +475,14 @@ def tubelet_box_at_frame(tubelet, frame_id):
             return box['bbox']
     return None
 
-
+def merge_score_protos(proto_1, proto_2, scheme='combine'):
+    assert scheme in ['combine', 'max']
+    assert proto_1['video'] == proto_2['video']
+    if scheme == 'combine':
+        new_proto = copy.copy(proto_1)
+        if proto_1['method'] != proto_2['method']:
+            new_proto['method'] = '_'.join([proto_1['method'], proto_2['method']])
+        new_proto['tubelets'].extend(copy.copy(proto_2['tubelets']))
+    elif scheme == 'max':
+        raise NotImplementedError
+    return new_proto
