@@ -478,11 +478,22 @@ def tubelet_box_at_frame(tubelet, frame_id):
 def merge_score_protos(proto_1, proto_2, scheme='combine'):
     assert scheme in ['combine', 'max']
     assert proto_1['video'] == proto_2['video']
+    new_proto = copy.copy(proto_1)
+    if proto_1['method'] != proto_2['method']:
+        new_proto['method'] = '_'.join([proto_1['method'], proto_2['method']])
     if scheme == 'combine':
-        new_proto = copy.copy(proto_1)
-        if proto_1['method'] != proto_2['method']:
-            new_proto['method'] = '_'.join([proto_1['method'], proto_2['method']])
         new_proto['tubelets'].extend(copy.copy(proto_2['tubelets']))
     elif scheme == 'max':
-        raise NotImplementedError
+        for tubelet1, tubelet2 in \
+            zip(new_proto['tubelets'], proto_2['tubelets']):
+            assert tubelet1['gt'] == tubelet2['gt']
+            assert tubelet1['class'] == tubelet2['class']
+            assert tubelet1['class_index'] == tubelet2['class_index']
+            for box1, box2 in zip(tubelet1['boxes'], tubelet2['boxes']):
+                assert box1['frame'] == box2['frame']
+                assert box1['anchor'] == box2['anchor']
+                assert box1['frame'] == box2['frame']
+                if box1['det_score'] < box2['det_score']:
+                    for key in box1:
+                        box1[key] = copy.copy(box2[key])
     return new_proto
