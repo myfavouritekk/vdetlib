@@ -125,6 +125,8 @@ Protocols
                             "track_score": track_score1,
                             "det_score": det_score1,
                             "conv_score": conv_score1,
+                            "all_score": [cls1_sc, cls2_sc, ...],
+                            "feat": [feat1, feat2, ...],
                             "hash": md5("video_name_frameid_x1_y1_x2_y2"),
                             "anchor": int,
                             "gt_overlap": iou_value
@@ -135,6 +137,8 @@ Protocols
                             "track_score": track_score2,
                             "det_score": det_score2,
                             "conv_score": conv_score2,
+                            "all_score" : [cls1_sc, cls2_sc, ...],
+                            "feat": [feat1, feat2, ...],
                             "hash": md5("video_name_frameid_x1_y1_x2_y2"),
                             "anchor": int,
                             "gt_overlap": iou_value
