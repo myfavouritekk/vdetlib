@@ -28,11 +28,22 @@ def score_conv_cls(score_proto, net):
         track['abs_anchors'] = map(abs, track['anchors'])
         track['gt_overlaps'] = map(lambda x:x['gt_overlap'],
                                   tubelet['boxes'])
-        for blob_name in ['det_scores', 'track_scores', 'anchors']:
-            net.blobs[blob_name].reshape(1, 1, track['length'])
+        track['labels'] = [1 if iou >= 0.5 else 0 for iou in track['gt_overlaps']]
+
+        # skip memory heavy features if possible
+        if 'all_scores' in net.blobs.keys():
+            track['all_scores'] = map(lambda x:x['all_score'],
+                                  tubelet['boxes'])
+        if 'feats' in net.blobs.keys():
+            track['feats'] = map(lambda x:x['feat'],
+                                  tubelet['boxes'])
+
+        for blob_name in set(net.blobs.keys()).intersection(set(track.keys())):
+            num_channels = net.blobs[blob_name].shape[1]
+            net.blobs[blob_name].reshape(1, num_channels, 1, track['length'])
             net.blobs[blob_name].data[...] = np.asarray(track[blob_name], dtype='float32')
         blobs_out = net.forward()
-        probs = blobs_out['probs'][:,1,:]
+        probs = blobs_out['probs'][:, 1,:]
         for box, prob in zip(tubelet['boxes'], probs.ravel()):
             box['conv_score'] = float(prob)
     return new_score_proto
