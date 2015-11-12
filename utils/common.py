@@ -391,8 +391,8 @@ def caffe_net(model, param, gpu_id=0, phase='test'):
     else:
         phase = caffe.TRAIN
     os.environ['GLOG_minloglevel'] = '2'
-    caffe.set_mode_gpu()
     caffe.set_device(gpu_id)
+    caffe.set_mode_gpu()
     net = caffe.Net(model, param, phase)
     return net
 
