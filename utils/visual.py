@@ -10,7 +10,7 @@ def unique_colors(N):
     HSV_tuples = [(x*1.0/N, 1, 0.8) for x in range(N)]
     return map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples)
 
-def add_bbox(img, boxes, colors=None):
+def add_bbox(img, boxes, colors=None, line_width=2):
     result = copy.copy(img)
     if colors is None:
         colors = unique_colors(len(boxes))
@@ -21,21 +21,21 @@ def add_bbox(img, boxes, colors=None):
         color = colors[box_id]
         color = tuple([int(255*x) for x in color])
         cv2.rectangle(result, (bbox[0], bbox[1]), (bbox[2], bbox[3]),
-                color, 2)
+                color, line_width)
     return result
 
-def plot(x, ys, labels=None, colors=None):
+def plot(x, ys, labels=None, colors=None, line_width=5):
     if colors is None:
         colors = unique_colors(len(ys))
     if labels is None:
         labels = [None] * len(ys)
     fig = plt.figure()
     for y, color, label in zip(ys, colors, labels):
-        plt.plot(x, y, color=color, label=label)
+        plt.plot(x, y, color=color, label=label, lw=line_width)
     plt.legend(loc=4)
     return fig
 
-def plot_track_scores(score_proto):
+def plot_track_scores(score_proto, legend=True):
     import numpy as np
     plots = []
     for tubelet in score_proto['tubelets']:
@@ -58,10 +58,13 @@ def plot_track_scores(score_proto):
                                   tubelet['boxes'])
         x = track['frames']
         y = []
-        labels = []
-        for label in ['det_scores', 'track_scores', 'anchors', 'gt_overlaps',
-                      'conv_scores']:
-            y.append(track[label])
-            labels.append(label)
-        plots.append(plot(x, y, labels))
+        if legend:
+            labels = []
+            for label in ['det_scores', 'track_scores', 'anchors', 'gt_overlaps',
+                          'conv_scores']:
+                y.append(track[label])
+                labels.append(label)
+            plots.append(plot(x, y, labels))
+        else:
+            plots.append(plot(x, y, None))
     return plots
