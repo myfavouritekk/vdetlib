@@ -6,6 +6,7 @@ from xml.dom import minidom
 import xmltodict
 import os
 import glob
+import sys
 
 name_map = {
     'n02691156': (1, 'airplane'),
@@ -54,6 +55,10 @@ if __name__ == '__main__':
     parser.add_argument('annot_dir')
     parser.add_argument('save_file')
     args = parser.parse_args()
+
+    if os.path.isfile(args.save_file):
+        print "{} already exists.".format(args.save_file)
+        sys.exit(0)
 
     vid_name = os.path.basename(args.annot_dir)
     annot = {}
