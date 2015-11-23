@@ -479,6 +479,12 @@ def tubelet_box_at_frame(tubelet, frame_id):
             return box['bbox']
     return None
 
+def tubelet_box_proto_at_frame(tubelet, frame_id):
+    for box in tubelet['boxes']:
+        if box['frame'] == frame_id:
+            return box
+    return None
+
 def merge_score_protos(proto_1, proto_2, scheme='combine'):
     assert scheme in ['combine', 'max']
     assert proto_1['video'] == proto_2['video']
