@@ -110,7 +110,8 @@ def track_from_det(vid_proto, det_proto, track_method):
 
 
 def greedily_track_from_det(vid_proto, det_proto, track_method,
-                            score_fun, max_tracks, gpu=0, thres=-2.5, engine=None):
+                            score_fun, max_tracks, gpu=0, thres=-2.5, engine=None,
+                            max_frames=None):
     '''greedily track top detections and supress detections
        that have large overlaps with tracked boxes'''
     assert vid_proto['video'] == det_proto['video']
@@ -129,7 +130,8 @@ def greedily_track_from_det(vid_proto, det_proto, track_method,
         if score_fun(topDet) < thres:
             print "Upon low confidence: total {} tracks".format(num_tracks)
             break
-        tracks.extend(track_method(vid_proto, dets[0], gpu=gpu, engine=engine))
+        tracks.extend(track_method(vid_proto, dets[0], gpu=gpu, engine=engine,
+                      max_frames=max_frames))
         num_tracks += 1
 
         # NMS
