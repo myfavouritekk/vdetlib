@@ -10,6 +10,7 @@ from ..utils.protocol import frame_path_after, frame_path_before, tracks_proto_f
 from ..utils.common import matlab_command, matlab_engine, temp_file
 from ..utils.cython_nms import track_det_nms
 from ..utils.log import logging
+import math
 
 def tld_tracker(vid_proto, det):
     script = os.path.join(os.path.dirname(__file__),
@@ -45,7 +46,7 @@ def tld_tracker(vid_proto, det):
     return tracks_proto
 
 
-def fcn_tracker(vid_proto, det, gpu=0, engine=None):
+def fcn_tracker(vid_proto, det, gpu=0, engine=None, max_frames=None):
     # suppress caffe logs
     try:
         orig_loglevel = os.environ['GLOG_minloglevel']
@@ -59,6 +60,12 @@ def fcn_tracker(vid_proto, det, gpu=0, engine=None):
     frame_id = det['frame']
     fw_frames = frame_path_after(vid_proto, frame_id)
     bw_frames = frame_path_before(vid_proto, frame_id)[::-1]
+    if max_frames is None:
+        num_frames = math.ceil((max_frames+1)/2.)
+    else:
+        num_frames = np.inf
+    fw_frames = fw_frames[:min(num_frames, len(fw_frames))]
+    bw_frames = bw_frames[:min(num_frames, len(bw_frames))]
 
     tic = time.time()
     fw_trk = matlab_engine(script,
@@ -150,3 +157,5 @@ def apply_track_det_nms(tracks, boxes, thres=0.3):
     logging.info("{} / {} boxes kept.".format(len(keep), len(boxes)))
     return keep
 
+
+def track_by_detection(det_proto, score_fun, max_tracks, thres=-2.5):
