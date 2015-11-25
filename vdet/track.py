@@ -159,5 +159,3 @@ def apply_track_det_nms(tracks, boxes, thres=0.3):
     logging.info("{} / {} boxes kept.".format(len(keep), len(boxes)))
     return keep
 
-
-def track_by_detection(det_proto, score_fun, max_tracks, thres=-2.5):
