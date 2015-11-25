@@ -372,10 +372,11 @@ def bbox_hash(video_name, frame_id, bbox):
 ## Tracking Protocol
 ##########################################
 
-def tracks_proto_from_boxes(boxes, video_name, anchor, start_frame=1):
+def tracks_proto_from_boxes(boxes, video_name, anchor, start_frame=1, step=1):
     tracks_proto = []
     started = False
-    for frame_idx, bbox in enumerate(boxes, start=start_frame):
+    for box_idx, bbox in enumerate(boxes):
+        frame_idx = start_frame + box_idx * step
         if np.any(np.isnan(bbox)): # invalid boxes
             if started: # end old track
                 tracks_proto.append(track)

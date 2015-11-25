@@ -57,9 +57,9 @@ def fcn_tracker(vid_proto, det, opts):
     script = os.path.join(os.path.dirname(__file__),
         '../../External/fcn_tracker_matlab/fcn_tracker.m')
     bbox = map(int, det['bbox'])
-    frame_id = det['frame']
-    fw_frames = frame_path_after(vid_proto, frame_id)
-    bw_frames = frame_path_before(vid_proto, frame_id)[::-1]
+    anchor_frame_id = det['frame']
+    fw_frames = frame_path_after(vid_proto, anchor_frame_id)
+    bw_frames = frame_path_before(vid_proto, anchor_frame_id)[::-1]
     if hasattr(opts, 'max_frames') and opts.max_frames is not None:
         num_frames = int(math.ceil((opts.max_frames+1)/2.))
     else:
@@ -96,9 +96,9 @@ def fcn_tracker(vid_proto, det, opts):
         trk = bw_trk
     toc = time.time()
     logging.info("Speed: {:02f} fps".format(len(trk) / (toc-tic)))
-    start_frame = frame_id - len(bw_trk) + 1;
+    start_frame = anchor_frame_id - step * (len(bw_trk) - 1);
     tracks_proto = tracks_proto_from_boxes(trk, vid_proto['video'],
-            frame_id, start_frame)
+            anchor_frame_id, start_frame, step)
 
     # reset log level
     os.environ['GLOG_minloglevel'] = orig_loglevel
