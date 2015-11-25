@@ -60,10 +60,19 @@ def fcn_tracker(vid_proto, det, opts):
     frame_id = det['frame']
     fw_frames = frame_path_after(vid_proto, frame_id)
     bw_frames = frame_path_before(vid_proto, frame_id)[::-1]
-    if opts.max_frames is not None:
+    if hasattr(opts, 'max_frames') and opts.max_frames is not None:
         num_frames = int(math.ceil((opts.max_frames+1)/2.))
     else:
         num_frames = np.inf
+    if hasattr(opts, 'step'):
+        step = opts.step
+    else:
+        step = 1
+
+    # down sample frame rates
+    fw_frames = fw_frames[::step]
+    bw_frames = bw_frames[::step]
+    # track upto maximum frames
     fw_frames = fw_frames[:min(num_frames, len(fw_frames))]
     bw_frames = bw_frames[:min(num_frames, len(bw_frames))]
 
