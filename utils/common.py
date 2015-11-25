@@ -351,6 +351,7 @@ def matlab_engine(fun_file, input_list, eng=None):
         logging.debug("before matlab quiting...")
         eng.quit()
         logging.debug("after matlab quiting...")
+    eng.clear(nargout=0)
     return result
 
 
