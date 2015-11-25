@@ -342,13 +342,10 @@ def matlab_engine(fun_file, input_list, eng=None):
         eng.cd(script_dirname)
         func = getattr(eng, fun_name)
         result = func(input_list)
-    except matlab.engine.EngineError:
+    except matlab.engine.EngineError, e:
         # Use new engine instead
-        logging.error("Starting a new matlab engine...")
-        eng = matlab.engine.start_matlab('-nodisplay -nojvm -nosplash -nodesktop')
-        eng.cd(script_dirname)
-        func = getattr(eng, fun_name)
-        result = func(input_list)
+        logging.error("Existing engine no response: {}".format(eng))
+        raise e
     if eng is None:
         logging.debug("before matlab quiting...")
         eng.quit()

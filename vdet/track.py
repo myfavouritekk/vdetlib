@@ -60,8 +60,8 @@ def fcn_tracker(vid_proto, det, gpu=0, engine=None, max_frames=None):
     frame_id = det['frame']
     fw_frames = frame_path_after(vid_proto, frame_id)
     bw_frames = frame_path_before(vid_proto, frame_id)[::-1]
-    if max_frames is None:
-        num_frames = math.ceil((max_frames+1)/2.)
+    if max_frames is not None:
+        num_frames = int(math.ceil((max_frames+1)/2.))
     else:
         num_frames = np.inf
     fw_frames = fw_frames[:min(num_frames, len(fw_frames))]
@@ -130,8 +130,19 @@ def greedily_track_from_det(vid_proto, det_proto, track_method,
         if score_fun(topDet) < thres:
             print "Upon low confidence: total {} tracks".format(num_tracks)
             break
-        tracks.extend(track_method(vid_proto, dets[0], gpu=gpu, engine=engine,
-                      max_frames=max_frames))
+        try:
+            track = track_method(vid_proto, dets[0], gpu=gpu, engine=engine,
+                max_frames=max_frames)
+        except:
+            import matlab.engine
+            try:
+                engine.quit()
+            except:
+                pass
+            engine = matlab.engine.start_matlab('-nodisplay -nojvm -nosplash -nodesktop')
+            track = track_method(vid_proto, dets[0], gpu=gpu, engine=engine,
+                max_frames=max_frames)
+        tracks.extend(track)
         num_tracks += 1
 
         # NMS
