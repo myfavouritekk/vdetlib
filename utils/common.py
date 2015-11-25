@@ -12,6 +12,7 @@ import cv2
 import subprocess
 import shlex
 from log import logging
+from easydict import EasyDict as edict
 
 def pickle(data, file_path):
     with open(file_path, 'wb') as f:
@@ -465,4 +466,5 @@ def iou(boxes1, boxes2):
     overlaps = 1. * inter / (areas1 + areas2.T - inter)
     return overlaps
 
-
+def options(option_dict):
+    return edict(option_dict)

@@ -46,7 +46,7 @@ def tld_tracker(vid_proto, det):
     return tracks_proto
 
 
-def fcn_tracker(vid_proto, det, gpu=0, engine=None, max_frames=None):
+def fcn_tracker(vid_proto, det, opts):
     # suppress caffe logs
     try:
         orig_loglevel = os.environ['GLOG_minloglevel']
@@ -60,8 +60,8 @@ def fcn_tracker(vid_proto, det, gpu=0, engine=None, max_frames=None):
     frame_id = det['frame']
     fw_frames = frame_path_after(vid_proto, frame_id)
     bw_frames = frame_path_before(vid_proto, frame_id)[::-1]
-    if max_frames is not None:
-        num_frames = int(math.ceil((max_frames+1)/2.))
+    if opts.max_frames is not None:
+        num_frames = int(math.ceil((opts.max_frames+1)/2.))
     else:
         num_frames = np.inf
     fw_frames = fw_frames[:min(num_frames, len(fw_frames))]
@@ -69,13 +69,13 @@ def fcn_tracker(vid_proto, det, gpu=0, engine=None, max_frames=None):
 
     tic = time.time()
     fw_trk = matlab_engine(script,
-                [matlab.double(bbox),] + fw_frames + [gpu,], engine)
+                [matlab.double(bbox),] + fw_frames + [opts.gpu,], opts.engine)
     if fw_trk is None:
         logging.error("Forward tracking failed: {}".format(sys.exc_info()[0]))
         fw_trk = [bbox+[1.]]
 
     bw_trk = matlab_engine(script,
-                [matlab.double(bbox),] + bw_frames + [gpu,], engine)
+                [matlab.double(bbox),] + bw_frames + [opts.gpu,], opts.engine)
     if bw_trk is None:
         logging.error("Backward tracking failed: {}".format(sys.exc_info()[0]))
         bw_trk = [bbox+[1.]]
@@ -110,8 +110,7 @@ def track_from_det(vid_proto, det_proto, track_method):
 
 
 def greedily_track_from_det(vid_proto, det_proto, track_method,
-                            score_fun, max_tracks, gpu=0, thres=-2.5, engine=None,
-                            max_frames=None):
+                            score_fun, opts):
     '''greedily track top detections and supress detections
        that have large overlaps with tracked boxes'''
     assert vid_proto['video'] == det_proto['video']
@@ -122,26 +121,24 @@ def greedily_track_from_det(vid_proto, det_proto, track_method,
     dets = copy.copy(det_proto['detections'])
     keep = range(len(dets))
     num_tracks = 0
-    while len(dets) > 0 and num_tracks < max_tracks:
+    while len(dets) > 0 and num_tracks < opts.max_tracks:
         # Tracking top detection
         dets = sorted(dets, key=lambda x:score_fun(x), reverse=True)
         topDet = dets[0]
         # stop tracking if confidence too low
-        if score_fun(topDet) < thres:
+        if score_fun(topDet) < opts.thres:
             print "Upon low confidence: total {} tracks".format(num_tracks)
             break
         try:
-            track = track_method(vid_proto, dets[0], gpu=gpu, engine=engine,
-                max_frames=max_frames)
+            track = track_method(vid_proto, dets[0], opts)
         except:
             import matlab.engine
             try:
-                engine.quit()
+                opts.engine.quit()
             except:
                 pass
-            engine = matlab.engine.start_matlab('-nodisplay -nojvm -nosplash -nodesktop')
-            track = track_method(vid_proto, dets[0], gpu=gpu, engine=engine,
-                max_frames=max_frames)
+            opts.engine = matlab.engine.start_matlab('-nodisplay -nojvm -nosplash -nodesktop')
+            track = track_method(vid_proto, dets[0], opts)
         tracks.extend(track)
         num_tracks += 1
 
