@@ -328,3 +328,33 @@ def dets_spatial_max_pooling(vid_proto, track_proto, det_proto, class_idx, overl
             cur_box['bbox'] = max_box
     score_proto['tubelets'] = tubelets_proto
     return score_proto
+
+def score_proto_temporal_maxpool(score_proto, window_size):
+    if window_size == 1:
+        return score_proto
+    if window_size % 2 != 1:
+        raise ValueError('Window size must be odd!')
+    half_window_size = window_size / 2
+
+    new_score_proto = copy.copy(score_proto)
+    new_score_proto['method'] += '_temporal_maxpool_{}'.format(window_size)
+    for tubelet in new_score_proto['tubelets']:
+        if tubelet['gt'] == 1:
+            raise ValueError('Dangerous: Score file contains gt tracks!')
+
+        boxes = tubelet['boxes']
+        scores = [boxes[i]['det_score'] for i in range(len(boxes))]
+        scores = np.array(scores)
+        scores = np.pad(scores, (0, window_size-1), 'constant', constant_values=(-1e+5,-1e+5))
+        scores = np.tile(scores.T, (window_size, 1))
+
+        for roll in range(window_size):
+            scores[roll] = np.roll(scores[roll], roll)
+
+        max_score = scores.max(0)
+        max_score = max_score[half_window_size:-half_window_size]
+
+        for i in range(len(boxes)):
+            tubelet['boxes'][i]['det_score'] = max_score[i]
+
+    return new_score_proto
