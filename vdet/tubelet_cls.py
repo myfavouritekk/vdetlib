@@ -9,6 +9,7 @@ import numpy as np
 import sys
 import os
 import copy
+from scipy.interpolate import interp1d
 
 def score_conv_cls(score_proto, net):
     new_score_proto = copy.copy(score_proto)
@@ -357,4 +358,53 @@ def score_proto_temporal_maxpool(score_proto, window_size):
         for i in range(len(boxes)):
             tubelet['boxes'][i]['det_score'] = max_score[i]
 
+    return new_score_proto
+
+def score_proto_interpolation(score_proto):
+    '''Perform interpolation on score protocols is only part of
+       the tracks are available'''
+    new_score_proto = {}
+    new_score_proto['video'] = score_proto['video']
+    new_score_proto['method'] = score_proto['method'] + '_interpolation'
+    tubelets_proto = []
+    idx_fun = lambda x:x['frame']
+    funcs = {
+        'x1': lambda x:x['bbox'][0],
+        'y1': lambda x:x['bbox'][1],
+        'x2': lambda x:x['bbox'][2],
+        'y2': lambda x:x['bbox'][3],
+        'det_score': lambda x:x['det_score'],
+        'anchor': lambda x:x['anchor']
+    }
+
+    for tubelet in score_proto['tubelets']:
+        if tubelet['gt'] == 1:
+            raise ValueError('Dangerous: Score file contains gt tracks!')
+
+        # Generate interpolation function for each field
+        truth_idx = map(idx_fun, tubelet['boxes'])
+        interp_funcs = {}
+        for field in funcs.keys():
+            field_fun = funcs[field]
+            truth_values = map(field_fun, tubelet['boxes'])
+            interpolator = interp1d(truth_idx, truth_values)
+            interp_funcs[field] = interpolator
+        new_tubelet = {}
+        for key in ['gt', 'class', 'class_index']:
+            new_tubelet[key] = tubelet[key]
+        new_tubelet['boxes'] = []
+        for dense_idx in xrange(min(truth_idx), max(truth_idx)+1):
+            box = {}
+            box['frame'] = dense_idx
+            box['det_score'] = float(interp_funcs['det_score'](dense_idx))
+            box['anchor'] = float(interp_funcs['anchor'](dense_idx))
+            x1 = interp_funcs['x1'](dense_idx)
+            y1 = interp_funcs['y1'](dense_idx)
+            x2 = interp_funcs['x2'](dense_idx)
+            y2 = interp_funcs['y2'](dense_idx)
+            box['bbox'] = map(float, [x1, y1, x2, y2])
+            new_tubelet['boxes'].append(box)
+        tubelets_proto.append(new_tubelet)
+
+    new_score_proto['tubelets'] = tubelets_proto
     return new_score_proto
