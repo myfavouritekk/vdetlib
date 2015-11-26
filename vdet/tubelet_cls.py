@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from ..utils.protocol import frame_path_at, track_box_at_frame, bbox_hash, \
-    tubelets_overlap, tubelets_proto_from_tracks_proto, tubelet_box_at_frame, det_score
+    tubelets_overlap, tubelets_proto_from_tracks_proto, tubelet_box_at_frame, det_score, tubelet_box_proto_at_frame
 from ..utils.common import imread, svm_from_rcnn_model, iou
 from ..utils.log import logging
 from ..vdet.image_det import googlenet_det, googlenet_features, svm_scores
@@ -279,3 +279,52 @@ def classify_tracks(video_proto, track_proto, cls_method, net, class_idx):
     cls_track['tracks'] = cls_method(video_proto, track_proto, net, class_idx)
     return cls_track
 
+def dets_spatial_max_pooling(vid_proto, track_proto, det_proto, class_idx, overlap_thres=0.7):
+    assert vid_proto['video'] == track_proto['video']
+    score_proto = {}
+    score_proto['video'] = vid_proto['video']
+    score_proto['method'] = "spatial_max_pooling_IOU_{}".format(overlap_thres)
+
+    tubelets_proto = tubelets_proto_from_tracks_proto(track_proto['tracks'], class_idx)
+    logging.info("Sampling dets in {} for {}...".format(vid_proto['video'],
+                 imagenet_vdet_classes[class_idx]))
+    for frame in vid_proto['frames']:
+        frame_id = frame['frame']
+        boxes = [tubelet_box_at_frame(tubelet, frame_id) \
+                 for tubelet in tubelets_proto]
+        valid_boxes = np.asarray([box for box in boxes if box is not None])
+        valid_index = [i for i, box in enumerate(boxes) if box is not None]
+        logging.info("frame {}: {} boxes".format(frame_id, len(valid_index)))
+        if len(valid_index) == 0:
+            continue
+
+        # find all detection proposal boxes in current frame
+        dets = [det for det in det_proto['detections'] if det['frame']==frame_id]
+        det_boxes = np.asarray(map(lambda x:x['bbox'], dets))
+        det_scores = np.asarray(map(lambda x:det_score(x, class_idx), dets))
+
+        for tubelet_id in valid_index:
+            cur_box = tubelet_box_proto_at_frame(tubelets_proto[tubelet_id], frame_id)
+            assert cur_box is not None
+            # calculate overlaps with all det_boxes in current frame
+            if len(det_boxes) > 0:
+                overlaps = iou([cur_box['bbox']], det_boxes)
+                overlap_idx = (overlaps > overlap_thres).ravel()
+            else:
+                print "Warning: Frame {} has no dets, but has tracks.".format(frame_id)
+                continue
+            if np.any(overlap_idx):
+                conf_boxes = det_boxes[overlap_idx]
+                conf_scores = det_scores[overlap_idx]
+                max_idx = np.argmax(conf_scores)
+                max_score = conf_scores[max_idx]
+                max_box = conf_boxes[max_idx].tolist()
+            else:
+                print "Warning: Tubelet {} has no overlapping dets (IOU > {}).".format(
+                    tubelet_id, overlap_thres)
+                max_score = -1e5
+                max_box = cur_box['bbox']
+            cur_box['det_score'] = max_score
+            cur_box['bbox'] = max_box
+    score_proto['tubelets'] = tubelets_proto
+    return score_proto
