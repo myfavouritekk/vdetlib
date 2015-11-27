@@ -330,6 +330,37 @@ def dets_spatial_max_pooling(vid_proto, track_proto, det_proto, class_idx, overl
     score_proto['tubelets'] = tubelets_proto
     return score_proto
 
+
+def anchor_propagate(vid_proto, track_proto, det_proto, class_idx):
+    assert vid_proto['video'] == track_proto['video']
+    score_proto = {}
+    score_proto['video'] = vid_proto['video']
+    score_proto['method'] = "anchor_propagate"
+    tubelets_proto = tubelets_proto_from_tracks_proto(track_proto['tracks'], class_idx)
+    logging.info("Propagating anchor scores in {} for {}...".format(vid_proto['video'],
+                 imagenet_vdet_classes[class_idx]))
+    for tubelet in tubelets_proto:
+        # find anchor box
+        anchor_box = [box for box in tubelet['boxes'] if box['anchor'] == 0]
+        assert len(anchor_box) == 1
+        anchor_box = anchor_box[0]
+
+        # get anchor detection score
+        anchor_frame = anchor_box['frame']
+        dets = [det for det in det_proto['detections'] if det['frame']==anchor_frame]
+        det_boxes = np.asarray(map(lambda x:x['bbox'], dets))
+        det_scores = np.asarray(map(lambda x:det_score(x, class_idx), dets))
+        overlaps = iou([anchor_box['bbox']], det_boxes)[0]
+        anchor_index = np.argmax(overlaps)
+        anchor_score = det_scores[anchor_index]
+
+        # propagate anchor scores
+        for box in tubelet['boxes']:
+            box['det_score'] = anchor_score
+    score_proto['tubelets'] = tubelets_proto
+    return score_proto
+
+
 def score_proto_temporal_maxpool(score_proto, window_size):
     if window_size == 1:
         return score_proto
