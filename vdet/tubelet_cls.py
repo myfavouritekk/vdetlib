@@ -411,6 +411,9 @@ def score_proto_interpolation(score_proto):
     for tubelet in score_proto['tubelets']:
         if tubelet['gt'] == 1:
             raise ValueError('Dangerous: Score file contains gt tracks!')
+        if len(tubelet['boxes']) <=2:
+            tubelets_proto.append(copy.copy(tubelet))
+            continue
 
         # Generate interpolation function for each field
         truth_idx = map(idx_fun, tubelet['boxes'])
