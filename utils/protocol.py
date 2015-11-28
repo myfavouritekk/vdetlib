@@ -443,6 +443,7 @@ def tubelets_proto_from_tracks_proto(tracks_proto, class_index):
         for box in track:
             tubelet_box = copy.copy(box)
             tubelet_box['track_score'] = tubelet_box['score']
+            tubelet_box['det_score'] = -1e5
             del tubelet_box['score']
             tubelet_boxes.append(tubelet_box)
         tubelet['boxes'] = tubelet_boxes
