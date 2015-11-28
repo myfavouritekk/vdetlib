@@ -18,4 +18,7 @@ if __name__ == '__main__':
         print "{} already exists.".format(args.out_file)
         sys.exit(0)
     vid = vid_proto_from_dir(args.root_dir, args.vid_name)
+    save_dir = os.path.dirname(args.out_file)
+    if not os.path.isdir(save_dir):
+        os.makedirs(save_dir)
     proto_dump(vid, args.out_file)
