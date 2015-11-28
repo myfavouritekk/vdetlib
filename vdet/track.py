@@ -155,7 +155,11 @@ def greedily_track_from_det(vid_proto, det_proto, track_method,
         boxes = [[x['frame'],]+x['bbox']+[score_fun(x),] \
                  for x in dets]
         logging.info("tracking top No.{} in {}".format(num_tracks, vid_proto['video']))
-        keep = apply_track_det_nms(tracks, boxes, thres=0.3)
+        if hasattr(opts, 'nms_thres') and opts.nms_thres is not None:
+            nms_thres = opts.nms_thres
+        else:
+            nms_thres = 0.3
+        keep = apply_track_det_nms(tracks, boxes, thres=nms_thres)
         dets = copy.copy([dets[i] for i in keep])
 
     track_proto['tracks'] = tracks
