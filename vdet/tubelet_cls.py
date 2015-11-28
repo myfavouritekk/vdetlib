@@ -442,3 +442,47 @@ def score_proto_interpolation(score_proto):
 
     new_score_proto['tubelets'] = tubelets_proto
     return new_score_proto
+
+
+def raw_dets_spatial_max_pooling(vid_proto, track_proto, frame_to_det, class_idx, overlap_thres=0.7):
+    assert vid_proto['video'] == track_proto['video']
+    score_proto = {}
+    score_proto['video'] = vid_proto['video']
+    score_proto['method'] = "spatial_max_pooling_IOU_{}".format(overlap_thres)
+
+    tubelets_proto = tubelets_proto_from_tracks_proto(track_proto['tracks'], class_idx)
+    logging.info("Sampling dets in {} for {}...".format(vid_proto['video'],
+                 imagenet_vdet_classes[class_idx]))
+
+    # build dict to fast indexing
+    frame_to_tubelets_idx = defaultdict(list)
+    for i, tubelet in enumerate(tubelets_proto):
+        for j, box in enumerate(tubelet['boxes']):
+            frame_to_tubelets_idx[box['frame']].append((i, j))
+
+    for frame in vid_proto['frames']:
+        frame_id = frame['frame']
+        if frame_id not in frame_to_det: continue
+        det_boxes, det_scores = frame_to_det[frame_id]
+        det_scores = det_scores[:, class_idx - 1].ravel()
+        if det_boxes.size == 0: continue
+        for i, j in frame_to_tubelets_idx[frame_id]:
+            cur_box = tubelets_proto[i]['boxes'][j]
+            if cur_box is None: continue
+            overlaps = iou([cur_box['bbox']], det_boxes)
+            overlap_idx = (overlaps > overlap_thres).ravel()
+            if np.any(overlap_idx):
+                conf_boxes = det_boxes[overlap_idx]
+                conf_scores = det_scores[overlap_idx]
+                max_idx = np.argmax(conf_scores)
+                max_score = conf_scores[max_idx]
+                max_box = conf_boxes[max_idx].tolist()
+            else:
+                print "Warning: Tubelet {} has no overlapping dets (IOU > {}).".format(
+                    tubelet_id, overlap_thres)
+                max_score = -1e5
+                max_box = cur_box['bbox']
+            cur_box['det_score'] = max_score
+            cur_box['bbox'] = max_box
+    score_proto['tubelets'] = tubelets_proto
+    return score_proto
