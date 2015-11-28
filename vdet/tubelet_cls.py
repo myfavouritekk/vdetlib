@@ -319,10 +319,10 @@ def dets_spatial_max_pooling(vid_proto, track_proto, det_proto, class_idx, overl
                 max_box = conf_boxes[max_idx].tolist()
             else:
                 print "Warning: Tubelet {} has no overlapping dets (IOU > {}).".format(
-                    tubelet_id, overlap_thres)
+                    i, overlap_thres)
                 max_score = -1e5
                 max_box = cur_box['bbox']
-            cur_box['det_score'] = max_score
+            cur_box['det_score'] = float(max_score)
             cur_box['bbox'] = max_box
     score_proto['tubelets'] = tubelets_proto
     return score_proto
@@ -387,7 +387,7 @@ def score_proto_temporal_maxpool(score_proto, window_size):
         max_score = max_score[half_window_size:-half_window_size]
 
         for i in range(len(boxes)):
-            tubelet['boxes'][i]['det_score'] = max_score[i]
+            tubelet['boxes'][i]['det_score'] = float(max_score[i])
 
     return new_score_proto
 
@@ -411,7 +411,7 @@ def score_proto_interpolation(score_proto):
     for tubelet in score_proto['tubelets']:
         if tubelet['gt'] == 1:
             raise ValueError('Dangerous: Score file contains gt tracks!')
-        if len(tubelet['boxes']) <=2:
+        if len(tubelet['boxes']) < 2:
             tubelets_proto.append(copy.copy(tubelet))
             continue
 
@@ -464,8 +464,8 @@ def raw_dets_spatial_max_pooling(vid_proto, track_proto, frame_to_det, class_idx
         frame_id = frame['frame']
         if frame_id not in frame_to_det: continue
         det_boxes, det_scores = frame_to_det[frame_id]
-        det_scores = det_scores[:, class_idx - 1].ravel()
         if det_boxes.size == 0: continue
+        det_scores = det_scores[:, class_idx - 1].ravel()
         for i, j in frame_to_tubelets_idx[frame_id]:
             cur_box = tubelets_proto[i]['boxes'][j]
             if cur_box is None: continue
@@ -479,10 +479,11 @@ def raw_dets_spatial_max_pooling(vid_proto, track_proto, frame_to_det, class_idx
                 max_box = conf_boxes[max_idx].tolist()
             else:
                 print "Warning: Tubelet {} has no overlapping dets (IOU > {}).".format(
-                    tubelet_id, overlap_thres)
+                    i, overlap_thres)
                 max_score = -1e5
                 max_box = cur_box['bbox']
-            cur_box['det_score'] = max_score
+            cur_box['det_score'] = float(max_score)
             cur_box['bbox'] = max_box
     score_proto['tubelets'] = tubelets_proto
     return score_proto
+
