@@ -336,6 +336,9 @@ def anchor_propagate(vid_proto, track_proto, det_proto, class_idx):
     tubelets_proto = tubelets_proto_from_tracks_proto(track_proto['tracks'], class_idx)
     logging.info("Propagating anchor scores in {} for {}...".format(vid_proto['video'],
                  imagenet_vdet_classes[class_idx]))
+    frame_to_det_idx = defaultdict(list)
+    for i, det in enumerate(det_proto['detections']):
+        frame_to_det_idx[det['frame']].append(i)
     for tubelet in tubelets_proto:
         # find anchor box
         anchor_box = [box for box in tubelet['boxes'] if box['anchor'] == 0]
@@ -344,9 +347,9 @@ def anchor_propagate(vid_proto, track_proto, det_proto, class_idx):
 
         # get anchor detection score
         anchor_frame = anchor_box['frame']
-        dets = [det for det in det_proto['detections'] if det['frame']==anchor_frame]
-        det_boxes = np.asarray(map(lambda x:x['bbox'], dets))
-        det_scores = np.asarray(map(lambda x:det_score(x, class_idx), dets))
+        det_idx = frame_to_det_idx[anchor_frame]
+        det_boxes = np.asarray([det_proto['detections'][i]['bbox'] for i in det_idx])
+        det_scores = np.asarray([det_proto['detections'][i]['scores'][class_idx - 1]['score'] for i in det_idx])
         overlaps = iou([anchor_box['bbox']], det_boxes)[0]
         anchor_index = np.argmax(overlaps)
         anchor_score = det_scores[anchor_index]
