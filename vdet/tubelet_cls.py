@@ -10,6 +10,7 @@ import sys
 import os
 import copy
 from scipy.interpolate import interp1d
+from collections import defaultdict
 
 def score_conv_cls(score_proto, net):
     new_score_proto = copy.copy(score_proto)
@@ -289,31 +290,27 @@ def dets_spatial_max_pooling(vid_proto, track_proto, det_proto, class_idx, overl
     tubelets_proto = tubelets_proto_from_tracks_proto(track_proto['tracks'], class_idx)
     logging.info("Sampling dets in {} for {}...".format(vid_proto['video'],
                  imagenet_vdet_classes[class_idx]))
+
+    # build dict to fast indexing
+    frame_to_tubelets_idx = defaultdict(list)
+    for i, tubelet in enumerate(tubelets_proto):
+        for j, box in enumerate(tubelet['boxes']):
+            frame_to_tubelets_idx[box['frame']].append((i, j))
+    frame_to_det_idx = defaultdict(list)
+    for i, det in enumerate(det_proto['detections']):
+        frame_to_det_idx[det['frame']].append(i)
+
     for frame in vid_proto['frames']:
         frame_id = frame['frame']
-        boxes = [tubelet_box_at_frame(tubelet, frame_id) \
-                 for tubelet in tubelets_proto]
-        valid_boxes = np.asarray([box for box in boxes if box is not None])
-        valid_index = [i for i, box in enumerate(boxes) if box is not None]
-        logging.info("frame {}: {} boxes".format(frame_id, len(valid_index)))
-        if len(valid_index) == 0:
-            continue
-
-        # find all detection proposal boxes in current frame
-        dets = [det for det in det_proto['detections'] if det['frame']==frame_id]
-        det_boxes = np.asarray(map(lambda x:x['bbox'], dets))
-        det_scores = np.asarray(map(lambda x:det_score(x, class_idx), dets))
-
-        for tubelet_id in valid_index:
-            cur_box = tubelet_box_proto_at_frame(tubelets_proto[tubelet_id], frame_id)
-            assert cur_box is not None
-            # calculate overlaps with all det_boxes in current frame
-            if len(det_boxes) > 0:
-                overlaps = iou([cur_box['bbox']], det_boxes)
-                overlap_idx = (overlaps > overlap_thres).ravel()
-            else:
-                print "Warning: Frame {} has no dets, but has tracks.".format(frame_id)
-                continue
+        det_idx = frame_to_det_idx[frame_id]
+        if len(det_idx) == 0: continue
+        det_boxes = np.asarray([det_proto['detections'][i]['bbox'] for i in det_idx])
+        det_scores = np.asarray([det_proto['detections'][i]['scores'][class_idx - 1]['score'] for i in det_idx])
+        for i, j in frame_to_tubelets_idx[frame_id]:
+            cur_box = tubelets_proto[i]['boxes'][j]
+            if cur_box is None: continue
+            overlaps = iou([cur_box['bbox']], det_boxes)
+            overlap_idx = (overlaps > overlap_thres).ravel()
             if np.any(overlap_idx):
                 conf_boxes = det_boxes[overlap_idx]
                 conf_scores = det_scores[overlap_idx]
