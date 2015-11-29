@@ -143,14 +143,14 @@ def greedily_track_from_det(vid_proto, det_proto, track_method,
     tracks = []
     while np.any(keep) and len(tracks) < opts.max_tracks:
         # tracking top detection
-        if not keep[cur_top_det_id]:
+        while cur_top_det_id < len(keep) and not keep[cur_top_det_id]:
             cur_top_det_id += 1
-            continue
+        if cur_top_det_id == len(keep): break
         top_det = dets[cur_top_det_id]
         cur_top_det_id += 1
         # stop tracking if confidence too low
         if score_fun(top_det) < opts.thres:
-            print "Upon low confidence: total {} tracks".format(len(tracks))
+            logging.info("Upon low confidence: total {} tracks".format(len(tracks)))
             break
         # start new track
         logging.info("tracking top No.{} in {}".format(len(tracks), vid_proto['video']))
