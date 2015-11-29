@@ -281,6 +281,27 @@ def classify_tracks(video_proto, track_proto, cls_method, net, class_idx):
     cls_track['tracks'] = cls_method(video_proto, track_proto, net, class_idx)
     return cls_track
 
+def do_score_completion(score_proto):
+    for tubelet in score_proto['tubelets']:
+        # deal with -100000
+        boxes = tubelet['boxes']
+        for i, box in enumerate(boxes):
+            if box['det_score'] > -10: continue
+            j = i
+            while j < len(boxes) and boxes[j]['det_score'] <= -10:
+                j += 1
+            if i == 0:
+                for k in xrange(i, j):
+                    boxes[k]['det_score'] = boxes[j]['det_score']
+            elif j == len(boxes):
+                for k in xrange(i, j):
+                    boxes[k]['det_score'] = boxes[i-1]['det_score']
+            else:
+                l = boxes[i-1]['det_score']
+                r = boxes[j]['det_score']
+                for k in xrange(i, j):
+                    boxes[k]['det_score'] = l + (r - l) * (k - i + 1) / (j - i + 1)
+
 def dets_spatial_max_pooling(vid_proto, track_proto, det_proto, class_idx, overlap_thres=0.7):
     assert vid_proto['video'] == track_proto['video']
     score_proto = {}
@@ -325,6 +346,7 @@ def dets_spatial_max_pooling(vid_proto, track_proto, det_proto, class_idx, overl
             cur_box['det_score'] = float(max_score)
             cur_box['bbox'] = max_box
     score_proto['tubelets'] = tubelets_proto
+    do_score_completion(score_proto)
     return score_proto
 
 
@@ -485,5 +507,6 @@ def raw_dets_spatial_max_pooling(vid_proto, track_proto, frame_to_det, class_idx
             cur_box['det_score'] = float(max_score)
             cur_box['bbox'] = max_box
     score_proto['tubelets'] = tubelets_proto
+    do_score_completion(score_proto)
     return score_proto
 
