@@ -6,11 +6,13 @@ import numpy as np
 import matlab
 import time
 import copy
+from collections import defaultdict
 from ..utils.protocol import frame_path_after, frame_path_before, tracks_proto_from_boxes
 from ..utils.common import matlab_command, matlab_engine, temp_file
 from ..utils.cython_nms import track_det_nms
 from ..utils.log import logging
 import math
+
 
 def tld_tracker(vid_proto, det):
     script = os.path.join(os.path.dirname(__file__),
@@ -122,24 +124,38 @@ def greedily_track_from_det(vid_proto, det_proto, track_method,
                             score_fun, opts):
     '''greedily track top detections and supress detections
        that have large overlaps with tracked boxes'''
+    if hasattr(opts, 'nms_thres') and opts.nms_thres is not None:
+        nms_thres = opts.nms_thres
+    else:
+        nms_thres = 0.3
     assert vid_proto['video'] == det_proto['video']
     track_proto = {}
     track_proto['video'] = vid_proto['video']
     track_proto['method'] = track_method.__name__
+    dets = sorted(det_proto['detections'], key=lambda x:score_fun(x), reverse=True)
+    det_info = np.asarray([[det['frame'],] + det['bbox'] + [score_fun(det),]
+                           for det in dets], dtype=np.float32)
+    frame_to_det_ids = defaultdict(list)
+    for i, det in enumerate(dets):
+        frame_to_det_ids[det['frame']].append(i)
+    keep = [True] * len(dets)
+    cur_top_det_id = 0
     tracks = []
-    dets = copy.copy(det_proto['detections'])
-    keep = range(len(dets))
-    num_tracks = 0
-    while len(dets) > 0 and num_tracks < opts.max_tracks:
-        # Tracking top detection
-        dets = sorted(dets, key=lambda x:score_fun(x), reverse=True)
-        topDet = dets[0]
+    while np.any(keep) and len(tracks) < opts.max_tracks:
+        # tracking top detection
+        if not keep[cur_top_det_id]:
+            cur_top_det_id += 1
+            continue
+        top_det = dets[cur_top_det_id]
+        cur_top_det_id += 1
         # stop tracking if confidence too low
-        if score_fun(topDet) < opts.thres:
-            print "Upon low confidence: total {} tracks".format(num_tracks)
+        if score_fun(top_det) < opts.thres:
+            print "Upon low confidence: total {} tracks".format(len(tracks))
             break
+        # start new track
+        logging.info("tracking top No.{} in {}".format(len(tracks), vid_proto['video']))
         try:
-            track = track_method(vid_proto, dets[0], opts)
+            new_tracks = track_method(vid_proto, top_det, opts)
         except:
             import matlab.engine
             try:
@@ -147,36 +163,22 @@ def greedily_track_from_det(vid_proto, det_proto, track_method,
             except:
                 pass
             opts.engine = matlab.engine.start_matlab('-nodisplay -nojvm -nosplash -nodesktop')
-            track = track_method(vid_proto, dets[0], opts)
-        tracks.extend(track)
-        num_tracks += 1
-
+            new_tracks = track_method(vid_proto, top_det, opts)
+        tracks.extend(new_tracks)
         # NMS
-        boxes = [[x['frame'],]+x['bbox']+[score_fun(x),] \
-                 for x in dets]
-        logging.info("tracking top No.{} in {}".format(num_tracks, vid_proto['video']))
-        if hasattr(opts, 'nms_thres') and opts.nms_thres is not None:
-            nms_thres = opts.nms_thres
-        else:
-            nms_thres = 0.3
-        keep = apply_track_det_nms(tracks, boxes, thres=nms_thres)
-        dets = copy.copy([dets[i] for i in keep])
-
+        logging.info("Applying nms between new tracks ({}) and detections.".format(len(new_tracks)))
+        for tracklet in new_tracks:
+            for box in tracklet:
+                frame_id = box['frame']
+                det_ids = frame_to_det_ids[frame_id]
+                det_ids = [i for i in det_ids if keep[i]]
+                if len(det_ids) == 0: continue
+                t = np.asarray([[frame_id,] + box['bbox']], dtype=np.float32)
+                d = det_info[det_ids]
+                kp = set(track_det_nms(t, d, nms_thres))
+                for i, det_id in enumerate(det_ids):
+                    if i not in kp:
+                        keep[det_id] = False
+        logging.info("{} / {} boxes kept.".format(np.sum(keep), len(keep)))
     track_proto['tracks'] = tracks
     return track_proto
-
-
-def apply_track_det_nms(tracks, boxes, thres=0.3):
-    if len(tracks) == 0:
-        return range(len(boxes))
-    box_score = np.asarray(boxes, dtype='float32')
-    logging.info("Applying nms between tracks ({}) and detections.".format(len(tracks)))
-    track_boxes = []
-    for track in tracks:
-        cur_boxes = [[box['frame'],]+box['bbox'] for box in track]
-        track_boxes.extend(cur_boxes)
-    track_boxes = np.asarray(track_boxes, dtype='float32')
-    keep = track_det_nms(track_boxes, box_score, thres)
-    logging.info("{} / {} boxes kept.".format(len(keep), len(boxes)))
-    return keep
-
