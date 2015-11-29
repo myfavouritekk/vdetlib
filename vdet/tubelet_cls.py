@@ -413,7 +413,21 @@ def score_proto_temporal_maxpool(score_proto, window_size):
 
     return new_score_proto
 
-def score_proto_interpolation(score_proto):
+def extrap1d(interpolator):
+    xs = interpolator.x
+    ys = interpolator.y
+
+    def pointwise(x):
+        if x < xs[0]:
+            return ys[0]+(x-xs[0])*(ys[1]-ys[0])/(xs[1]-xs[0])
+        elif x > xs[-1]:
+            return ys[-1]+(x-xs[-1])*(ys[-1]-ys[-2])/(xs[-1]-xs[-2])
+        else:
+            return interpolator(x)
+
+    return pointwise
+
+def score_proto_interpolation(score_proto, vid_proto):
     '''Perform interpolation on score protocols is only part of
        the tracks are available'''
     new_score_proto = {}
@@ -430,6 +444,8 @@ def score_proto_interpolation(score_proto):
         'anchor': lambda x:x['anchor']
     }
 
+    max_frames = len(vid_proto['frames'])
+
     for tubelet in score_proto['tubelets']:
         if tubelet['gt'] == 1:
             raise ValueError('Dangerous: Score file contains gt tracks!')
@@ -444,12 +460,20 @@ def score_proto_interpolation(score_proto):
             field_fun = funcs[field]
             truth_values = map(field_fun, tubelet['boxes'])
             interpolator = interp1d(truth_idx, truth_values)
-            interp_funcs[field] = interpolator
+            extrapolator = extrap1d(interpolator)
+            interp_funcs[field] = extrapolator
         new_tubelet = {}
         for key in ['gt', 'class', 'class_index']:
             new_tubelet[key] = tubelet[key]
         new_tubelet['boxes'] = []
-        for dense_idx in xrange(min(truth_idx), max(truth_idx)+1):
+        min_idx = min(truth_idx)
+        max_idx = max(truth_idx)
+        # extrapolate first and last frames
+        if min_idx == 2:
+            min_idx = 1
+        if max_idx == max_frames - 1:
+            max_idx = max_frames
+        for dense_idx in xrange(min_idx, max_idx+1):
             box = {}
             box['frame'] = dense_idx
             box['det_score'] = float(interp_funcs['det_score'](dense_idx))
