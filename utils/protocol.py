@@ -512,7 +512,7 @@ def merge_score_protos(proto_1, proto_2, scheme='combine'):
     return new_proto
 
 
-def load_raw_det(vid_proto, det_dir):
+def load_frame_to_det(vid_proto, det_dir):
     frame_to_det = {}
     for frame in vid_proto['frames']:
         frame_id = frame['frame']
@@ -524,3 +524,19 @@ def load_raw_det(vid_proto, det_dir):
             d = sio.loadmat(score_file)
             frame_to_det[frame_id] = (d['boxes'], d['zs'])
     return frame_to_det
+
+def load_det_info(vid_proto, det_dir):
+    # [[frame_id, x1, y1, x2, y2, scores], ...]
+    det_info = []
+    for frame in vid_proto['frames']:
+        frame_id = frame['frame']
+        basename = os.path.splitext(frame['path'])[0]
+        score_file = os.path.join(det_dir, basename + '.mat')
+        if not os.path.isfile(score_file):
+            score_file = os.path.join(det_dir, frame['path'] + '.mat')
+        if os.path.isfile(score_file):
+            d = sio.loadmat(score_file)
+            if d['boxes'].size == 0: continue
+            for boxes, scores in zip(d['boxes'], d['zs']):
+                det_info.append([frame_id,] + boxes.tolist() + scores.tolist())
+    return np.asarray(det_info)
