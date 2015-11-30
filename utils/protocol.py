@@ -199,6 +199,7 @@ import hashlib
 import os
 import copy
 import numpy as np
+import scipy.io as sio
 import gzip
 
 ##########################################
@@ -442,6 +443,7 @@ def tubelets_proto_from_tracks_proto(tracks_proto, class_index):
         for box in track:
             tubelet_box = copy.copy(box)
             tubelet_box['track_score'] = tubelet_box['score']
+            tubelet_box['det_score'] = -1e5
             del tubelet_box['score']
             tubelet_boxes.append(tubelet_box)
         tubelet['boxes'] = tubelet_boxes
@@ -508,3 +510,17 @@ def merge_score_protos(proto_1, proto_2, scheme='combine'):
                     for key in box1:
                         box1[key] = copy.copy(box2[key])
     return new_proto
+
+
+def load_raw_det(vid_proto, det_dir):
+    frame_to_det = {}
+    for frame in vid_proto['frames']:
+        frame_id = frame['frame']
+        basename = os.path.splitext(frame['path'])[0]
+        score_file = os.path.join(det_dir, basename + '.mat')
+        if not os.path.isfile(score_file):
+            score_file = os.path.join(det_dir, frame['path'] + '.mat')
+        if os.path.isfile(score_file):
+            d = sio.loadmat(score_file)
+            frame_to_det[frame_id] = (d['boxes'], d['zs'])
+    return frame_to_det
