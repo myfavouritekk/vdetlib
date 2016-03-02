@@ -369,6 +369,13 @@ def bbox_hash(video_name, frame_id, bbox):
             bbox[0], bbox[1], bbox[2], bbox[3])).hexdigest()
 
 
+def boxes_at_frame(box_proto, frame_id):
+    boxes = []
+    for box in box_proto['boxes']:
+        if box['frame'] == frame_id:
+            boxes.append(copy.copy(box))
+    return boxes
+
 ##########################################
 ## Tracking Protocol
 ##########################################
