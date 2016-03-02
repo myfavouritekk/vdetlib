@@ -20,10 +20,6 @@ def simple_crop(image, bbox):
 
 
 def fast_rcnn_det(img, boxes, net):
-    sys.path.insert(1, os.path.join(os.path.dirname(__file__),
-        '../../External/fast-rcnn/lib/'))
-    sys.path.insert(1, os.path.join(os.path.dirname(__file__),
-        '../../External/fast-rcnn/caffe-fast-rcnn/python'))
     from fast_rcnn.test import im_detect
     # suppress caffe logs
     try:
@@ -32,25 +28,9 @@ def fast_rcnn_det(img, boxes, net):
         orig_loglevel = '0'
     os.environ['GLOG_minloglevel'] = '2'
 
-    new_tracks = [[] for _ in track_proto['tracks']]
-    for frame in video_proto['frames']:
-        frame_id = frame['frame']
-        img = imread(frame_path_at(video_proto, frame_id))
-        boxes = [track_box_at_frame(tracklet, frame_id) \
-                 for tracklet in track_proto['tracks']]
-        valid_boxes = np.asarray([box for box in boxes if box is not None])
-        valid_index = [i for i in len(boxes) if boxes[i] is not None]
-        scores, pred_boxes = im_detect(net, img, valid_boxes)
-        for score, box, track_id in zip(scores, pred_boxes, valid_index):
-            new_tracks[track_id].append(
-                {
-                    "frame": frame_id,
-                    "bbox": list(box),
-                    "score": score[class_idx],
-                    "hash": bbox_hash(video_proto['video'], frame_id, box)
-                })
+    scores, reg_boxes = im_detect(net, img, np.array(boxes))
     os.environ['GLOG_minloglevel'] = orig_loglevel
-    return new_tracks
+    return scores
 
 
 @timeout(30)
