@@ -283,6 +283,12 @@ def sample_vid_proto(vid_proto, stride=10):
     new_vid['frames'] = [vid_proto['frames'][i] for i in idx]
     return new_vid
 
+def path_to_index(vid_proto, path):
+    for frame in vid_proto['frames']:
+        if frame['path'].startswith(path):
+            return frame['frame']
+    return None
+
 
 ##########################################
 ## Detection Protocol
