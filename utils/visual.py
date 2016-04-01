@@ -41,18 +41,22 @@ def plot_track_scores(score_proto, legend=True):
     for tubelet in score_proto['tubelets']:
         track = {}
         track['length'] = len(tubelet['boxes'])
-        track['mean_iou'] = np.mean([map(lambda x:x['gt_overlap'],
-                                  tubelet['boxes'])])
+        if track['length'] <= 0:
+            continue
+        fields = tubelet['boxes'][0].keys()
         track['det_scores'] = map(lambda x:x['det_score'],
-                                  tubelet['boxes'])
-        track['track_scores'] = map(lambda x:x['track_score'],
                                   tubelet['boxes'])
         track['anchors'] = map(lambda x:x['anchor'] * 1. / track['length'],
                                   tubelet['boxes'])
         track['abs_anchors'] = map(abs, track['anchors'])
-        track['gt_overlaps'] = map(lambda x:x['gt_overlap'],
+        if 'gt_overlap' in fields:
+            track['gt_overlaps'] = map(lambda x:x['gt_overlap'],
                                   tubelet['boxes'])
-        track['conv_scores'] = map(lambda x:x['conv_score'],
+        if 'conv_score' in fields:
+            track['conv_scores'] = map(lambda x:x['conv_score'],
+                                  tubelet['boxes'])
+        if 'track_score' in fields:
+            track['track_scores'] = map(lambda x:x['track_score'],
                                   tubelet['boxes'])
         track['frames'] = map(lambda x:x['frame'],
                                   tubelet['boxes'])
@@ -60,8 +64,8 @@ def plot_track_scores(score_proto, legend=True):
         y = []
         if legend:
             labels = []
-            for label in ['det_scores', 'track_scores', 'anchors', 'gt_overlaps',
-                          'conv_scores']:
+            for label in set(['det_scores', 'track_scores', 'anchors', 'gt_overlaps',
+                          'conv_scores']).intersection(set(track.keys())):
                 y.append(track[label])
                 labels.append(label)
             plots.append(plot(x, y, labels))
