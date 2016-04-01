@@ -449,8 +449,8 @@ def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
 
 
 def iou(boxes1, boxes2):
-    boxes1 = np.asarray(boxes1)
-    boxes2 = np.asarray(boxes2)
+    boxes1 = np.asarray(boxes1).astype('float')
+    boxes2 = np.asarray(boxes2).astype('float')
     # intersection boundaries, widths and heights
     ix1 = np.maximum(boxes1[:,[0]], boxes2[:,[0]].T)
     ix2 = np.minimum(boxes1[:,[2]], boxes2[:,[2]].T)
