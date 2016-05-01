@@ -154,3 +154,31 @@ def rpn_fast_rcnn_det_vid(net_rpn, net_no_rpn, vid_proto, rpn_fun, fast_rcnn_fun
                '{:d} object proposals').format(idx, timer.total_time, reg_boxes.shape[0])
     det_proto['detections'] = detections
     return det_proto
+
+
+def rpn_fast_rcnn_det_vid_raw(net_rpn, net_no_rpn, vid_proto, rpn_fun, fast_rcnn_fun,
+        cls_subset=None, thres=-np.inf):
+    res = []
+
+    for idx, frame in enumerate(vid_proto['frames'], start=1):
+        # Load the demo image
+        image_name = frame_path_at(vid_proto, frame['frame'])
+        im = imread(image_name)
+
+        # Detect all object classes and regress object bounds
+        timer = Timer()
+        timer.tic()
+        proposals = rpn_fun(net_rpn, im)
+        scores, reg_boxes = fast_rcnn_fun(net_no_rpn, im, proposals)
+
+        reg_boxes = reg_boxes.reshape((reg_boxes.shape[0], -1, 4))
+        if cls_subset is not None:
+            scores = scores[:, cls_subset]
+            # renormalize the probabilities
+            scores = scores / scores.sum(axis=1)[:,np.newaxis]
+            reg_boxes = reg_boxes[:, cls_subset]
+        res.append((reg_boxes, scores))
+        timer.toc()
+        print ('Frame #{:04d}: Detection took {:.3f}s for '
+               '{:d} object proposals').format(idx, timer.total_time, reg_boxes.shape[0])
+    return res
