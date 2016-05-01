@@ -106,7 +106,7 @@ def fast_rcnn_det_vid(net, vid_proto, box_proto, det_fun,
     return all_boxes
 
 
-def _append_detections(detections, frame_id, boxes, scores, thres=0.1):
+def _append_detections(detections, frame_id, boxes, scores, thres):
     for box, score in zip(boxes, scores):
         for cls_index, (cls_box, cls_score, cls_name) in \
                 enumerate(zip(box, score, imagenet_vdet_classes)):
@@ -125,7 +125,7 @@ def _append_detections(detections, frame_id, boxes, scores, thres=0.1):
 
 
 def rpn_fast_rcnn_det_vid(net_rpn, net_no_rpn, vid_proto, rpn_fun, fast_rcnn_fun,
-        cls_subset=None):
+        cls_subset=None, thres=-np.inf):
     det_proto = {}
     det_proto['video'] = vid_proto['video']
     detections = []
@@ -148,7 +148,7 @@ def rpn_fast_rcnn_det_vid(net_rpn, net_no_rpn, vid_proto, rpn_fun, fast_rcnn_fun
             # renormalize the probabilities
             scores = scores / scores.sum(axis=1)[:,np.newaxis]
             reg_boxes = reg_boxes[:, cls_subset]
-        _append_detections(detections, frame['frame'], reg_boxes, scores)
+        _append_detections(detections, frame['frame'], reg_boxes, scores, thres)
         timer.toc()
         print ('Frame #{:04d}: Detection took {:.3f}s for '
                '{:d} object proposals').format(idx, timer.total_time, reg_boxes.shape[0])
