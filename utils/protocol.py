@@ -65,8 +65,9 @@ Protocols
             "boxes": [
                 {
                     "frame": 1,
-                    "bbox": [x1, y1, x2, y2]
-                    "hash": md5("video_name_frameid_x1_y1_x2_y2")
+                    "bbox": [x1, y1, x2, y2],
+                    "hash": md5("video_name_frameid_x1_y1_x2_y2"),
+                    "positive": bool
                 },
                 {
                     //...
