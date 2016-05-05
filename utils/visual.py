@@ -10,11 +10,13 @@ def unique_colors(N):
     HSV_tuples = [(x*1.0/N, 1, 0.8) for x in range(N)]
     return map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples)
 
-def add_bbox(img, boxes, colors=None, line_width=2):
+def add_bbox(img, boxes, scores=None, colors=None, line_width=2):
+    if scores is None:
+        scores = [[] for __ in xrange(len(boxes))]
     result = copy.copy(img)
     if colors is None:
         colors = unique_colors(len(boxes))
-    for box_id, bbox in enumerate(boxes):
+    for box_id, (bbox, score) in enumerate(zip(boxes, scores)):
         if bbox is None:
             continue
         bbox = map(int, bbox)
@@ -22,6 +24,9 @@ def add_bbox(img, boxes, colors=None, line_width=2):
         color = tuple([int(255*x) for x in color])
         cv2.rectangle(result, (bbox[0], bbox[1]), (bbox[2], bbox[3]),
                 color, line_width)
+        if score:
+            cv2.putText(result, "{:.2f}".format(score), tuple(bbox[0:2]),
+                cv2.FONT_HERSHEY_PLAIN, 2, color, 2)
     return result
 
 def plot(x, ys, labels=None, colors=None, line_width=5):
