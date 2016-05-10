@@ -63,7 +63,7 @@ def fast_rcnn_cls(video_proto, track_proto, net, class_idx):
         boxes = [track_box_at_frame(tracklet, frame_id) \
                  for tracklet in track_proto['tracks']]
         valid_boxes = np.asarray([box for box in boxes if box is not None])
-        valid_index = [i for i in len(boxes) if boxes[i] is not None]
+        valid_index = [i for i in xrange(len(boxes)) if boxes[i] is not None]
         scores, pred_boxes = im_detect(net, img, valid_boxes)
         for score, box, track_id in zip(scores, pred_boxes, valid_index):
             new_tracks[track_id].append(
