@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Object Detection from Video Tubelets with Convolutional Neural Networks by myfavouritekk</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Object Detection from Video Tubelets with Convolutional Neural Networks</h1>
+      <h2 class="project-tagline">Kai Kang, Wanli Ouyang, Hongsheng Li, and Xiaogang Wang</h2>
+      <a href="https://github.com/myfavouritekk/vdetlib" class="btn">View on GitHub</a>
+      <a href="https://github.com/myfavouritekk/vdetlib/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/myfavouritekk/vdetlib/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="vdetlib---python-library-for-object-detection-in-videos" class="anchor" href="#vdetlib---python-library-for-object-detection-in-videos" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>vdetlib - Python library for object detection in videos</h1>
+
+<h2>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h2>
+
+<p>The <code>vdetlib</code> python library serves to detection objects in videos. It was originally developed for the <a href="http://image-net.org/challenges/LSVRC/2015/index#vid">ImageNet VID</a> challenge introduced in <a href="http://image-net.org/challenges/LSVRC/2015/">ILSVRC2015</a>. It contains components such as <strong>region proposal</strong>, <strong>still-image object detection</strong>, <strong>generic object tracking</strong>, <strong>spatial max-pooling</strong> and <strong>temporal convolution</strong>.</p>
+
+<p>The <a href="https://github.com/myfavouritekk/T-CNN">T-CNN</a> framework contains many tools that utilizes <code>vdetlib</code>. Please checkout that repository if you are interested.</p>
+
+<h2>
+<a id="citing-vdetlib" class="anchor" href="#citing-vdetlib" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Citing vdetlib</h2>
+
+<p>If you find vdetlib useful in your research and related project, please consider citing the following work accepted in CVPR 2016.</p>
+
+<div class="highlight highlight-text-tex"><pre>@inproceedings{kang2016object,
+  Title = {Object Detection from Video Tubelets with Convolutional Neural Networks},
+  Author = {Kang, Kai and Ouyang, Wanli and Li, Hongsheng and Wang, Xiaogang},
+  Booktitle = {CVPR},
+  Year = {2016}
+}</pre></div>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
+
+<p>This project is released under the MIT License.</p>
+
+<h2>
+<a id="installations" class="anchor" href="#installations" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installations</h2>
+
+<h3>
+<a id="prerequisites" class="anchor" href="#prerequisites" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Prerequisites</h3>
+
+<ol>
+<li>
+<a href="https://github.com/BVLC/caffe">caffe</a> with <code>Python layer</code> and <code>pycaffe</code>
+</li>
+<li><a href="https://github.com/scott89/FCNT">FCN tracker</a></li>
+<li>
+<code>Matlab</code> with python <a href="http://www.mathworks.com/help/matlab/matlab-engine-for-python.html?refresh=true">engine</a>
+</li>
+</ol>
+
+<h3>
+<a id="instructions" class="anchor" href="#instructions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Instructions</h3>
+
+<ol>
+<li>
+<p>Clone the repository</p>
+
+<div class="highlight highlight-source-shell"><pre>    $ git clone https://github.com/myfavouritekk/vdetlib.git</pre></div>
+</li>
+<li>
+<p>Compilation</p>
+
+<div class="highlight highlight-source-shell"><pre>    $ <span class="pl-c1">cd</span> vdetlib
+    $ make</pre></div>
+</li>
+</ol>
+
+<h2>
+<a id="protocols" class="anchor" href="#protocols" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Protocols</h2>
+
+<p>There are some basic protocol types for using this library. All of them are defined as python dictionaries and are saved as <code>JSON</code> files. The definitions are written in the <a href="utils/protocol.py"><code>protocol.py</code></a>.</p>
+
+<h2>
+<a id="to-do-list" class="anchor" href="#to-do-list" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>To-do list</h2>
+
+<ul>
+<li>[ ] detailed documentation</li>
+<li>[ ] demo script</li>
+</ul>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/myfavouritekk/vdetlib">Object Detection from Video Tubelets with Convolutional Neural Networks</a> is maintained by <a href="https://github.com/myfavouritekk">myfavouritekk</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
