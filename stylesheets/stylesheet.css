@@ -91,6 +91,9 @@ a {
   margin-bottom: 2rem;
   font-weight: normal;
   opacity: 0.7; }
+.project-tagline a {
+  color: white;
+}
 
 @media screen and (min-width: 64em) {
   .project-tagline {
