@@ -202,6 +202,7 @@ import copy
 import numpy as np
 import scipy.io as sio
 import gzip
+import cPickle
 
 ##########################################
 ## General Protocol Manipulation
@@ -212,9 +213,14 @@ def proto_load(file_path):
     # AD_HOC implementation
     if os.path.isfile(file_path + '.gz'):
         file_path += '.gz'
+    elif os.path.isfile(file_path + '.pkl'):
+        file_path += '.pkl'
     if os.path.splitext(file_path)[1] == '.gz':
         with gzip.GzipFile(file_path) as f:
             obj = json.loads(f.read())
+    elif os.path.splitext(file_path)[1] == '.pkl':
+        with open(file_path, 'rb') as f:
+            obj = cPickle.load(f)
     else:
         with open(file_path, 'r') as f:
             obj = json.load(f)
@@ -232,6 +238,10 @@ def proto_dump(obj, file_path):
             if os.path.isfile(file_path):
                 os.remove(file_path)
             file_path = os.path.splitext(file_path)[0]
+    if os.path.splitext(file_path)[1] == '.pkl':
+        with open(file_path, 'wb') as f:
+            cPickle.dump(obj, f, cPickle.HIGHEST_PROTOCOL)
+            return
 
     with open(file_path, 'w') as f:
         json.dump(obj, f, indent=2)
@@ -290,6 +300,17 @@ def path_to_index(vid_proto, path):
             return frame['frame']
     return None
 
+##########################################
+## Annotation Protocol
+##########################################
+
+def annot_boxes_at_frame(annot_proto, frame_id):
+    boxes = []
+    for annot in annot_proto['annotations']:
+        for box in annot['track']:
+            if box['frame'] == frame_id:
+                boxes.append(box['bbox'])
+    return boxes
 
 ##########################################
 ## Detection Protocol
