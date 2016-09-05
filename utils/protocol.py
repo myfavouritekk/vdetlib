@@ -436,10 +436,10 @@ def tracks_proto_from_boxes(boxes, video_name, anchor, start_frame=1, step=1):
     return tracks_proto
 
 
-def track_box_at_frame(tracklet, frame_id):
+def track_box_at_frame(tracklet, frame_id, box_key='bbox'):
     for box in tracklet:
         if box['frame'] == frame_id:
-            return box['bbox']
+            return box[box_key]
     return None
 
 def track_proto_from_annot_proto(annot_proto):

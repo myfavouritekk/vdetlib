@@ -19,6 +19,7 @@ def add_bbox(img, boxes, scores=None, colors=None, line_width=2):
     for box_id, (bbox, score) in enumerate(zip(boxes, scores)):
         if bbox is None:
             continue
+        assert len(bbox) == 4
         bbox = map(int, bbox)
         color = colors[box_id]
         color = tuple([int(255*x) for x in color])
