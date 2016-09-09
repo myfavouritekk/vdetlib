@@ -312,6 +312,14 @@ def annot_boxes_at_frame(annot_proto, frame_id):
                 boxes.append(box['bbox'])
     return boxes
 
+def annots_at_frame(annot_proto, frame_id):
+    annots = []
+    for annot in annot_proto['annotations']:
+        for box in annot['track']:
+            if box['frame'] == frame_id:
+                annots.append(box)
+    return annots
+
 ##########################################
 ## Detection Protocol
 ##########################################
